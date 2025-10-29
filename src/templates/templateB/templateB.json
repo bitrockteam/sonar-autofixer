@@ -1,0 +1,10 @@
+{
+  "name": "templateB",
+  "description": "Template B",
+  "version": "1.0.0",
+  "author": "John Doe",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.2.0"
+  }
+}
