@@ -205,7 +205,7 @@ const buildUrlForBranch = (branch) => {
  * @returns {string} URL for fetching issues
  */
 const buildUrlForPr = (prLink) => {
-  const prKeyMatch = prLink.match(/pullRequest=([^&]+)/);
+  const prKeyMatch = /pullRequest=([^&]+)/.exec(prLink);
   if (!prKeyMatch) {
     throw new Error(
       "Invalid SonarCloud/SonarQube PR link format. Expected format: https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY"
