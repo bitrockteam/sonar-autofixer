@@ -7,6 +7,7 @@
     "sonar-fetch": "./src/fetch-sonar-issues.mjs"
   },
   "scripts": {
+    "sonar:scan": "node src/scanner.js",
     "sonar:fetch:github": "node src/fetch-sonar-issues-github.js $1 $2",
     "sonar:fetch": "node src/fetch-sonar-issues.mjs $1 $2"
   },
@@ -41,5 +42,6 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3"
-  }
+  },
+  "type": "module"
 }
