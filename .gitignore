@@ -1,0 +1,9 @@
+.env
+.sonar
+node_modules
+.DS_Store
+*.log
+dist
+build
+.npm
+.pnpm-debug.log*
