@@ -52,7 +52,7 @@ program
   .description("Run local Sonar scanner and save report")
   .allowExcessArguments(true)
   .action(() => {
-    runNodeScript("./scanner.js", process.argv.slice(3));
+    runNodeScript("./sonar/scanner.js", process.argv.slice(3));
   });
 
 program.parse(process.argv);
