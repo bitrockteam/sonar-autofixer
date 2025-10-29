@@ -2,13 +2,13 @@
   "name": "@davide97g/sonar-autofixer",
   "version": "1.0.0",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
-  "main": "src/fetch-sonar-issues.js",
+  "main": "src/fetch-sonar-issues.mjs",
   "bin": {
-    "sonar-fetch": "./src/fetch-sonar-issues.js"
+    "sonar-fetch": "./src/fetch-sonar-issues.mjs"
   },
   "scripts": {
     "sonar:fetch:github": "node src/fetch-sonar-issues-github.js $1 $2",
-    "sonar:fetch": "node src/fetch-sonar-issues.js $1 $2"
+    "sonar:fetch": "node src/fetch-sonar-issues.mjs $1 $2"
   },
   "files": [
     "src",

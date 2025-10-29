@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import dotenv from "dotenv";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import dotenv from "dotenv";
 dotenv.config();
 
 const email = process.env.BITBUCKET_EMAIL;
@@ -59,12 +59,13 @@ try {
       }
 
       // Fallback: try to extract PR number from branch name if it follows a pattern like "feat/BAT-1234" or "pr/1234"
-      const prNumberRegex =
-        /(?:pr\/|PR\/|pull\/|PULL\/)(\d+)|(?:feat\/|feature\/|fix\/|bugfix\/).*?(\d+)/i;
+      const prNumberRegex = /(?:pr\/|PR\/|pull\/|PULL\/)(\d+)|(?:feat\/|feature\/|fix\/|bugfix\/).*?(\d+)/i;
       const prNumberMatch = prNumberRegex.exec(branch);
       if (prNumberMatch) {
         const prNumber = prNumberMatch[1] || prNumberMatch[2];
-        console.log(`✅ Extracted PR #${prNumber} from branch name: ${branch}`);
+        console.log(
+          `✅ Extracted PR #${prNumber} from branch name: ${branch}`
+        );
         return prNumber;
       }
 
