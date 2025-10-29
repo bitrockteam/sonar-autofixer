@@ -41,7 +41,7 @@ program
   .description("Fetch Sonar issues and save to .sonar/issues.json")
   .allowExcessArguments(true)
   .action(() => {
-    runNodeScript("./fetch-sonar-issues-github.js", process.argv.slice(3));
+    runNodeScript("./versioning/index.js", process.argv.slice(3));
   });
 
 program

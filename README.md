@@ -1,6 +1,6 @@
 # Sonar Autofixer
 
-CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis.
+CLI utility for fetching SonarQube issues and running local SonarQube scans. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis. Includes AI editor integration for automated issue fixing.
 
 ## Installation
 
@@ -40,65 +40,142 @@ Or install globally:
 npm install -g @davide97g/sonar-autofixer
 ```
 
+## Quick Start
+
+### 1. Initialize Configuration
+
+Run the interactive setup to configure your project:
+
+```bash
+npx @davide97g/sonar-autofixer init
+```
+
+This will:
+
+- Create `.sonar/autofixer.config.json` with your project settings
+- Add npm scripts to your `package.json`
+- Create AI editor rules for automated issue fixing (Cursor, VSCode, Windsurf)
+
+### 2. Set Up Environment Variables
+
+Create a `.env` file in your project root:
+
+```env
+# GitHub Configuration
+GITHUB_TOKEN=your-github-token
+GITHUB_OWNER=your-username
+GITHUB_REPO=your-repo-name
+
+# SonarQube/SonarCloud Configuration
+SONAR_TOKEN=your-sonar-token
+SONAR_ORGANIZATION=your-organization
+SONAR_COMPONENT_KEYS=your-project-key
+SONAR_BASE_URL=https://sonarcloud.io/api/issues/search
+```
+
 ## Usage
 
-### As a CLI tool
+### Commands
 
-After installation, you can use the `sonar-fetch` command:
+#### Fetch SonarQube Issues
 
 ```bash
 # Fetch issues for current branch (auto-detects PR)
-sonar-fetch
+npx @davide97g/sonar-autofixer fetch
 
 # Fetch issues for a specific branch
-sonar-fetch my-branch
+npx @davide97g/sonar-autofixer fetch my-branch
 
 # Fetch issues from a SonarQube PR link
-sonar-fetch my-branch https://sonarqube.example.com/project/issues?id=project&pullRequest=PR_KEY
+npx @davide97g/sonar-autofixer fetch my-branch https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY
 ```
 
-### As an npm script
+#### Run Local SonarQube Scan
 
 ```bash
-npm run sonar:fetch [branch] [sonar-pr-link]
+# Run local SonarQube scan
+npx @davide97g/sonar-autofixer scan
 ```
 
-## Configuration
+#### Initialize Configuration
 
-Create a `.env` file in your project root with the following variables:
+```bash
+# Interactive setup
+npx @davide97g/sonar-autofixer init
+```
 
-```env
-BITBUCKET_EMAIL=your-email@example.com
-BITBUCKET_API_TOKEN=your-api-token
-SONAR_BASE_URL=https://your-sonarqube.com/project/issues
-BITBUCKET_BASE_URL=https://api.bitbucket.org/2.0/repositories/your-org/your-repo
+### As npm Scripts
+
+After initialization, you can use the added npm scripts:
+
+```bash
+# Fetch issues
+npm run sonar:fetch
+
+# Run local scan
+npm run sonar:scan
 ```
 
 ## Features
 
-- **Automatic PR Detection**: Automatically detects PR IDs from your current git branch using Bitbucket/GitHub API
+- **Automatic PR Detection**: Automatically detects PR IDs from your current git branch using GitHub API
 - **Fallback Support**: Falls back to branch-based fetching if PR detection fails
 - **PR Link Support**: Directly fetch issues using a SonarQube PR link
+- **Local Scanning**: Run SonarQube scans locally and save results
+- **AI Editor Integration**: Creates rules for Cursor, VSCode, Windsurf for automated issue fixing
 - **Issue Summary**: Displays a summary of issues by severity after fetching
+- **Configuration Management**: Interactive setup for easy configuration
 
 ## How It Works
 
+### Fetch Command
+
 1. Detects the current git branch or uses provided branch name
-2. Attempts to find associated PR using Bitbucket API or branch name pattern matching
+2. Attempts to find associated PR using GitHub API or branch name pattern matching
 3. Fetches SonarQube issues for the PR or branch
 4. Saves issues to `.sonar/issues.json`
 5. Displays a summary of fetched issues
 
-## Output
+### Scan Command
 
-The script saves fetched issues to `.sonar/issues.json` in your project root. This file contains all SonarQube issues in JSON format, ready for further processing or analysis.
+1. Validates SonarQube token and configuration
+2. Runs local SonarQube scanner
+3. Saves results to `.sonar/scanner-report.json`
+4. Provides detailed scan output
+
+### Init Command
+
+1. Prompts for project configuration (repo name, git provider, etc.)
+2. Creates configuration file
+3. Updates package.json with npm scripts
+4. Creates AI editor rules based on your editor choice
+
+## Output Files
+
+- `.sonar/issues.json` - Fetched SonarQube issues in JSON format
+- `.sonar/scanner-report.json` - Local scan results
+- `.sonar/autofixer.config.json` - Project configuration
+- `.cursor/rules/sonar-issue-fix.mdc` - Cursor AI rules (if selected)
+- `.vscode/sonar-issue-fix.md` - VSCode rules (if selected)
+- `.windsurf/rules/sonar-issue-fix.mdc` - Windsurf rules (if selected)
+
+## AI Editor Integration
+
+The tool creates specific rules for your chosen AI editor to help with automated SonarQube issue fixing:
+
+- **Cursor**: Creates `.cursor/rules/sonar-issue-fix.mdc`
+- **VSCode with Copilot**: Creates `.vscode/sonar-issue-fix.md`
+- **Windsurf**: Creates `.windsurf/rules/sonar-issue-fix.mdc`
+
+These rules provide patterns and priorities for fixing common SonarQube issues.
 
 ## Requirements
 
-- Node.js (v14 or higher)
+- Node.js (v18 or higher)
 - Git repository
-- Bitbucket/GitHub API token with appropriate permissions
-- SonarQube access
+- GitHub API token with appropriate permissions
+- SonarQube/SonarCloud access
+- SonarQube Scanner (for local scans): `npm install -g @sonar/scan`
 
 ## License
 
