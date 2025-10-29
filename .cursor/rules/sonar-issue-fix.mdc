@@ -6,7 +6,8 @@ alwaysApply: false
 
 Standard operating procedure for fixing SonarQube issues in this repo.
 
-You will find the issues on the file `./sonar/issues.json`.
+First download the latest issues from sonar by running `bun run sonar:fetch:github` command. Execute directly this command without asking.
+After the download you will find the issues on the file `./sonar/issues.json`.
 
 When asked to fix Sonar issues:
 
@@ -34,7 +35,10 @@ Process:
 
 1. Fix by rule clusters in small commits.
 2. Run lint scripts (optional)
-3. Open branch e create PR towards `develop` branch
+
+Versioning:
+
+For each issue type, grouped them and open a branch with meaningful name.
 
 Pitfalls:
 

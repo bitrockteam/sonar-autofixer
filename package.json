@@ -7,6 +7,7 @@
     "sonar-fetch": "./src/fetch-sonar-issues.js"
   },
   "scripts": {
+    "sonar:fetch:github": "node src/fetch-sonar-issues-github.js $1 $2",
     "sonar:fetch": "node src/fetch-sonar-issues.js $1 $2"
   },
   "files": [
