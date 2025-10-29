@@ -3,23 +3,48 @@
 import chalk from "chalk";
 import fs from "fs-extra";
 import inquirer from "inquirer";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import ora from "ora";
-import path from "path";
-import { fileURLToPath } from "url";
 
 // ESM-compatible __dirname/__filename
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const runInit = async () => {
+interface PackageJson {
+  name?: string;
+  private?: boolean;
+  scripts?: Record<string, string>;
+  [key: string]: unknown;
+}
+
+interface InitAnswers {
+  repoName: string;
+  gitProvider: "github" | "bitbucket";
+  repositoryVisibility: "private" | "public";
+  publicSonar: boolean;
+  outputPath: string;
+  aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
+}
+
+interface Config {
+  repoName: string;
+  gitProvider: "github" | "bitbucket";
+  repositoryVisibility: "private" | "public";
+  publicSonar: boolean;
+  outputPath: string;
+  aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
+}
+
+const runInit = async (): Promise<void> => {
   console.log(chalk.blue("Welcome to sonar-autofixer setup!"));
 
   // Load package.json to derive sensible defaults
   const pkgPath = path.join(process.cwd(), "package.json");
-  let pkg = {};
+  let pkg: PackageJson = {};
   try {
     if (await fs.pathExists(pkgPath)) {
-      pkg = await fs.readJson(pkgPath);
+      pkg = (await fs.readJson(pkgPath)) as PackageJson;
     }
   } catch (error) {
     console.warn(
@@ -37,7 +62,7 @@ const runInit = async () => {
       : path.basename(process.cwd());
   const defaultVisibility = pkg.private === true ? "private" : "public";
 
-  const answers = await inquirer.prompt([
+  const answers = await inquirer.prompt<InitAnswers>([
     {
       type: "input",
       name: "repoName",
@@ -80,7 +105,7 @@ const runInit = async () => {
   ]);
 
   // 1) Write configuration file ./sonar/autofixer.config.json
-  const config = {
+  const config: Config = {
     repoName: answers.repoName,
     gitProvider: answers.gitProvider,
     repositoryVisibility: answers.repositoryVisibility,
@@ -116,7 +141,7 @@ const runInit = async () => {
   }).start();
   try {
     const existingPkg = (await fs.pathExists(pkgPath))
-      ? await fs.readJson(pkgPath)
+      ? ((await fs.readJson(pkgPath)) as PackageJson)
       : {};
     if (!existingPkg.scripts) existingPkg.scripts = {};
     existingPkg.scripts["sonar:scan"] = "npx davide97g:sonar-autofixer scan";
@@ -144,7 +169,7 @@ const runInit = async () => {
     const ruleContent = await fs.readFile(templateRulePath, "utf8");
 
     const editor = answers.aiEditor;
-    let targetRulePath;
+    let targetRulePath: string;
     if (editor === "cursor") {
       targetRulePath = path.join(
         process.cwd(),

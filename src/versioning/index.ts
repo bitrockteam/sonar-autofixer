@@ -8,11 +8,24 @@ import { SonarIssueExtractor } from "../sonar-issue-extractor.js";
 
 dotenv.config();
 
+interface Config {
+  gitProvider: "github" | "bitbucket";
+  outputPath?: string;
+  sonarBaseUrl?: string;
+  publicSonar?: boolean;
+  [key: string]: unknown;
+}
+
+interface SonarIssuesResponse {
+  issues?: Array<{ severity?: string; [key: string]: unknown }>;
+  [key: string]: unknown;
+}
+
 /**
  * Loads configuration from .sonar/autofixer.config.json
- * @returns {Object} Configuration object
+ * @returns Configuration object
  */
-const loadConfiguration = () => {
+const loadConfiguration = (): Config => {
   const configPath = path.join(
     process.cwd(),
     ".sonar",
@@ -25,7 +38,7 @@ const loadConfiguration = () => {
     );
   }
 
-  const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  const config = JSON.parse(fs.readFileSync(configPath, "utf8")) as Config;
 
   // Validate required configuration
   if (!config.gitProvider) {
@@ -41,16 +54,20 @@ const loadConfiguration = () => {
 
 /**
  * Detects PR ID based on the configured git provider
- * @param {string} branch - Current git branch name
- * @param {string} gitProvider - Git provider (github or bitbucket)
- * @returns {Promise<string|null>} PR ID if found, null otherwise
+ * @param branch - Current git branch name
+ * @param gitProvider - Git provider (github or bitbucket)
+ * @returns PR ID if found, null otherwise
  */
-const detectPrId = async (branch, gitProvider) => {
+const detectPrId = async (
+  branch: string,
+  gitProvider: "github" | "bitbucket"
+): Promise<string | null> => {
   const extractor = new SonarIssueExtractor();
 
   if (gitProvider === "github") {
     return await extractor.detectGitHubPrId(branch);
-  } else if (gitProvider === "bitbucket") {
+  }
+  if (gitProvider === "bitbucket") {
     return await extractor.detectBitbucketPrId(branch);
   }
 
@@ -59,10 +76,13 @@ const detectPrId = async (branch, gitProvider) => {
 
 /**
  * Fetches SonarQube issues based on configuration and command line arguments
- * @param {string|null} branchName - Optional branch name
- * @param {string|null} sonarPrLink - Optional SonarQube PR link
+ * @param branchName - Optional branch name
+ * @param sonarPrLink - Optional SonarQube PR link
  */
-const fetchSonarIssues = async (branchName = null, sonarPrLink = null) => {
+const fetchSonarIssues = async (
+  branchName: string | null = null,
+  sonarPrLink: string | null = null
+): Promise<void> => {
   try {
     // Load configuration
     const config = loadConfiguration();
@@ -77,8 +97,8 @@ const fetchSonarIssues = async (branchName = null, sonarPrLink = null) => {
     // Initialize SonarQube extractor
     const extractor = new SonarIssueExtractor();
 
-    let issues;
-    let usedSource;
+    let issues: SonarIssuesResponse;
+    let usedSource: string;
 
     if (sonarPrLink) {
       // If PR link is provided, fetch issues from that PR
@@ -130,7 +150,7 @@ const fetchSonarIssues = async (branchName = null, sonarPrLink = null) => {
 
     // Display summary
     if (issues.issues && issues.issues.length > 0) {
-      const severityCounts = {};
+      const severityCounts: Record<string, number> = {};
       for (const issue of issues.issues) {
         const severity = issue.severity || "UNKNOWN";
         severityCounts[severity] = (severityCounts[severity] || 0) + 1;
@@ -145,7 +165,8 @@ const fetchSonarIssues = async (branchName = null, sonarPrLink = null) => {
       }
     }
   } catch (error) {
-    console.error("❌ Error fetching SonarQube issues:", error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("❌ Error fetching SonarQube issues:", errorMessage);
     process.exit(1);
   }
 };

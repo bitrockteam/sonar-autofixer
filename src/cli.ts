@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import path from "path";
-import { fileURLToPath } from "url";
 import { spawnSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 // ESM-compatible __dirname/__filename
 const __filename = fileURLToPath(import.meta.url);
@@ -16,7 +16,10 @@ program
   .description("CLI for sonar-autofixer")
   .version("1.0.0");
 
-const runNodeScript = (relativeScriptPath, args = []) => {
+const runNodeScript = (
+  relativeScriptPath: string,
+  args: string[] = []
+): void => {
   const scriptPath = path.join(__dirname, relativeScriptPath);
   const result = spawnSync(process.execPath, [scriptPath, ...args], {
     stdio: "inherit",

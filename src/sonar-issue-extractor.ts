@@ -2,10 +2,39 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+interface SonarIssue {
+  severity?: string;
+  [key: string]: unknown;
+}
+
+interface SonarResponse {
+  issues?: SonarIssue[];
+  [key: string]: unknown;
+}
+
+interface Config {
+  sonarBaseUrl?: string;
+  publicSonar?: boolean;
+  gitProvider?: string;
+  [key: string]: unknown;
+}
+
 /**
  * SonarIssueExtractor - Handles all SonarQube API interactions and PR detection
  */
 export class SonarIssueExtractor {
+  private readonly githubToken: string | undefined;
+  private readonly githubOwner: string | undefined;
+  private readonly githubRepo: string | undefined;
+  private readonly githubBaseUrl: string;
+  private readonly bitbucketEmail: string | undefined;
+  private readonly bitbucketApiToken: string | undefined;
+  private readonly bitbucketBaseUrl: string | undefined;
+  private readonly sonarToken: string | undefined;
+  private readonly sonarBaseUrlRaw: string;
+  private readonly sonarComponentKeys: string | undefined;
+  private readonly sonarOrganization: string | undefined;
+
   constructor() {
     // GitHub configuration
     this.githubToken = process.env.GITHUB_TOKEN;
@@ -28,10 +57,10 @@ export class SonarIssueExtractor {
 
   /**
    * Gets SonarQube authentication headers
-   * @param {string} token - SonarQube token
-   * @returns {Object} Authentication headers
+   * @param token - SonarQube token
+   * @returns Authentication headers
    */
-  getSonarAuthHeaders(token) {
+  getSonarAuthHeaders(token?: string): Record<string, string> {
     if (!token) return {};
 
     // SonarCloud/SonarQube typically uses Basic Auth: token as username, empty password
@@ -45,9 +74,9 @@ export class SonarIssueExtractor {
 
   /**
    * Gets Bitbucket authentication headers
-   * @returns {Object} Authentication headers
+   * @returns Authentication headers
    */
-  getBitbucketAuthHeaders() {
+  getBitbucketAuthHeaders(): Record<string, string> {
     if (!this.bitbucketEmail || !this.bitbucketApiToken) {
       throw new Error("BITBUCKET_EMAIL and BITBUCKET_API_TOKEN are required");
     }
@@ -62,10 +91,10 @@ export class SonarIssueExtractor {
 
   /**
    * Normalizes SonarQube base URL to API endpoint
-   * @param {string} baseUrl - Raw base URL
-   * @returns {string} Normalized API URL
+   * @param baseUrl - Raw base URL
+   * @returns Normalized API URL
    */
-  normalizeSonarUrl(baseUrl) {
+  normalizeSonarUrl(baseUrl: string): string {
     let url = baseUrl;
     if (!url.includes("/api/issues/search")) {
       url = url.replace(/\/project\/issues[^/]*$/, "").replace(/\/$/, "");
@@ -77,10 +106,10 @@ export class SonarIssueExtractor {
 
   /**
    * Detects GitHub PR ID from branch name
-   * @param {string} branch - Branch name
-   * @returns {Promise<string|null>} PR ID if found, null otherwise
+   * @param branch - Branch name
+   * @returns PR ID if found, null otherwise
    */
-  async detectGitHubPrId(branch) {
+  async detectGitHubPrId(branch: string): Promise<string | null> {
     try {
       if (!this.githubToken || !this.githubOwner || !this.githubRepo) {
         console.log("⚠️  GitHub configuration missing, skipping PR detection");
@@ -99,7 +128,7 @@ export class SonarIssueExtractor {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as Array<{ number: number }>;
         if (Array.isArray(data) && data.length > 0) {
           const prNumber = data[0].number;
           console.log(`✅ Found PR #${prNumber} for branch: ${branch}`);
@@ -117,7 +146,9 @@ export class SonarIssueExtractor {
       });
 
       if (closedResponse.ok) {
-        const closedData = await closedResponse.json();
+        const closedData = (await closedResponse.json()) as Array<{
+          number: number;
+        }>;
         if (Array.isArray(closedData) && closedData.length > 0) {
           const prNumber = closedData[0].number;
           console.log(
@@ -134,23 +165,25 @@ export class SonarIssueExtractor {
       if (prNumberMatch) {
         const prNumber = prNumberMatch[1] || prNumberMatch[2];
         console.log(`✅ Extracted PR #${prNumber} from branch name: ${branch}`);
-        return prNumber;
+        return prNumber || null;
       }
 
       console.log(`⚠️  No PR found for branch: ${branch}`);
       return null;
     } catch (error) {
-      console.log(`⚠️  Could not detect GitHub PR ID: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.log(`⚠️  Could not detect GitHub PR ID: ${errorMessage}`);
       return null;
     }
   }
 
   /**
    * Detects Bitbucket PR ID from branch name
-   * @param {string} branch - Branch name
-   * @returns {Promise<string|null>} PR ID if found, null otherwise
+   * @param branch - Branch name
+   * @returns PR ID if found, null otherwise
    */
-  async detectBitbucketPrId(branch) {
+  async detectBitbucketPrId(branch: string): Promise<string | null> {
     try {
       if (
         !this.bitbucketEmail ||
@@ -172,7 +205,9 @@ export class SonarIssueExtractor {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as {
+          values?: Array<{ id: number }>;
+        };
         if (data.values && data.values.length > 0) {
           const prNumber = data.values[0].id;
           console.log(`✅ Found PR #${prNumber} for branch: ${branch}`);
@@ -187,23 +222,25 @@ export class SonarIssueExtractor {
       if (prNumberMatch) {
         const prNumber = prNumberMatch[1] || prNumberMatch[2];
         console.log(`✅ Extracted PR #${prNumber} from branch name: ${branch}`);
-        return prNumber;
+        return prNumber || null;
       }
 
       console.log(`⚠️  No PR found for branch: ${branch}`);
       return null;
     } catch (error) {
-      console.log(`⚠️  Could not detect Bitbucket PR ID: ${error.message}`);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.log(`⚠️  Could not detect Bitbucket PR ID: ${errorMessage}`);
       return null;
     }
   }
 
   /**
    * Handles SonarQube API response
-   * @param {Response} response - Fetch response
-   * @returns {Promise<Object>} Parsed JSON response
+   * @param response - Fetch response
+   * @returns Parsed JSON response
    */
-  async handleSonarResponse(response) {
+  async handleSonarResponse(response: Response): Promise<SonarResponse> {
     const contentType = response.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
       const errorText = await response.text();
@@ -224,16 +261,16 @@ export class SonarIssueExtractor {
       );
     }
 
-    return await response.json();
+    return (await response.json()) as SonarResponse;
   }
 
   /**
    * Builds URL for fetching issues by branch
-   * @param {string} branch - Branch name
-   * @param {Object} config - Configuration object
-   * @returns {string} URL for fetching issues
+   * @param branch - Branch name
+   * @param config - Configuration object
+   * @returns URL for fetching issues
    */
-  buildUrlForBranch(branch, config) {
+  buildUrlForBranch(branch: string, config: Config): string {
     const sonarBaseUrl = this.normalizeSonarUrl(
       config.sonarBaseUrl || this.sonarBaseUrlRaw
     );
@@ -255,31 +292,30 @@ export class SonarIssueExtractor {
         additionalFields: "_all",
       });
       return `${sonarBaseUrl}?${params.toString()}`;
-    } else {
-      // SonarQube setup (private instance)
-      const params = new URLSearchParams({
-        branch,
-        components: "bat",
-        s: "FILE_LINE",
-        inNewCodePeriod: "true",
-        issueStatuses: "CONFIRMED,OPEN",
-        ps: "100",
-        facets:
-          "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
-        additionalFields: "_all",
-        timeZone: "Europe/Rome",
-      });
-      return `${sonarBaseUrl}?${params.toString()}`;
     }
+    // SonarQube setup (private instance)
+    const params = new URLSearchParams({
+      branch,
+      components: "bat",
+      s: "FILE_LINE",
+      inNewCodePeriod: "true",
+      issueStatuses: "CONFIRMED,OPEN",
+      ps: "100",
+      facets:
+        "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
+      additionalFields: "_all",
+      timeZone: "Europe/Rome",
+    });
+    return `${sonarBaseUrl}?${params.toString()}`;
   }
 
   /**
    * Builds URL for fetching issues by PR link
-   * @param {string} prLink - SonarQube PR link
-   * @param {Object} config - Configuration object
-   * @returns {string} URL for fetching issues
+   * @param prLink - SonarQube PR link
+   * @param config - Configuration object
+   * @returns URL for fetching issues
    */
-  buildUrlForPr(prLink, config) {
+  buildUrlForPr(prLink: string, config: Config): string {
     const sonarBaseUrl = this.normalizeSonarUrl(
       config.sonarBaseUrl || this.sonarBaseUrlRaw
     );
@@ -311,31 +347,30 @@ export class SonarIssueExtractor {
         additionalFields: "_all",
       });
       return `${sonarBaseUrl}?${params.toString()}`;
-    } else {
-      // SonarQube setup (private instance)
-      const params = new URLSearchParams({
-        pullRequest: prKey,
-        components: "bat",
-        s: "FILE_LINE",
-        inNewCodePeriod: "true",
-        issueStatuses: "CONFIRMED,OPEN",
-        ps: "100",
-        facets:
-          "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
-        additionalFields: "_all",
-        timeZone: "Europe/Rome",
-      });
-      return `${sonarBaseUrl}?${params.toString()}`;
     }
+    // SonarQube setup (private instance)
+    const params = new URLSearchParams({
+      pullRequest: prKey,
+      components: "bat",
+      s: "FILE_LINE",
+      inNewCodePeriod: "true",
+      issueStatuses: "CONFIRMED,OPEN",
+      ps: "100",
+      facets:
+        "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
+      additionalFields: "_all",
+      timeZone: "Europe/Rome",
+    });
+    return `${sonarBaseUrl}?${params.toString()}`;
   }
 
   /**
    * Builds URL for fetching issues by PR ID
-   * @param {string} prId - PR ID
-   * @param {Object} config - Configuration object
-   * @returns {string} URL for fetching issues
+   * @param prId - PR ID
+   * @param config - Configuration object
+   * @returns URL for fetching issues
    */
-  buildUrlForPrId(prId, config) {
+  buildUrlForPrId(prId: string, config: Config): string {
     const sonarBaseUrl = this.normalizeSonarUrl(
       config.sonarBaseUrl || this.sonarBaseUrlRaw
     );
@@ -357,31 +392,33 @@ export class SonarIssueExtractor {
         additionalFields: "_all",
       });
       return `${sonarBaseUrl}?${params.toString()}`;
-    } else {
-      // SonarQube setup (private instance)
-      const params = new URLSearchParams({
-        pullRequest: prId,
-        components: "bat",
-        s: "FILE_LINE",
-        inNewCodePeriod: "true",
-        issueStatuses: "CONFIRMED,OPEN",
-        ps: "100",
-        facets:
-          "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
-        additionalFields: "_all",
-        timeZone: "Europe/Rome",
-      });
-      return `${sonarBaseUrl}?${params.toString()}`;
     }
+    // SonarQube setup (private instance)
+    const params = new URLSearchParams({
+      pullRequest: prId,
+      components: "bat",
+      s: "FILE_LINE",
+      inNewCodePeriod: "true",
+      issueStatuses: "CONFIRMED,OPEN",
+      ps: "100",
+      facets:
+        "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
+      additionalFields: "_all",
+      timeZone: "Europe/Rome",
+    });
+    return `${sonarBaseUrl}?${params.toString()}`;
   }
 
   /**
    * Fetches issues for a branch
-   * @param {string} branch - Branch name
-   * @param {Object} config - Configuration object
-   * @returns {Promise<Object>} Issues data
+   * @param branch - Branch name
+   * @param config - Configuration object
+   * @returns Issues data
    */
-  async fetchIssuesForBranch(branch, config) {
+  async fetchIssuesForBranch(
+    branch: string,
+    config: Config
+  ): Promise<SonarResponse> {
     const url = this.buildUrlForBranch(branch, config);
     console.log(
       `Fetching issues from: ${url.replace(
@@ -404,11 +441,14 @@ export class SonarIssueExtractor {
 
   /**
    * Fetches issues for a PR link
-   * @param {string} prLink - SonarQube PR link
-   * @param {Object} config - Configuration object
-   * @returns {Promise<Object>} Issues data
+   * @param prLink - SonarQube PR link
+   * @param config - Configuration object
+   * @returns Issues data
    */
-  async fetchIssuesForPr(prLink, config) {
+  async fetchIssuesForPr(
+    prLink: string,
+    config: Config
+  ): Promise<SonarResponse> {
     const url = this.buildUrlForPr(prLink, config);
     console.log(
       `Fetching issues from PR: ${url.replace(
@@ -431,11 +471,14 @@ export class SonarIssueExtractor {
 
   /**
    * Fetches issues for a PR ID
-   * @param {string} prId - PR ID
-   * @param {Object} config - Configuration object
-   * @returns {Promise<Object>} Issues data
+   * @param prId - PR ID
+   * @param config - Configuration object
+   * @returns Issues data
    */
-  async fetchIssuesForPrId(prId, config) {
+  async fetchIssuesForPrId(
+    prId: string,
+    config: Config
+  ): Promise<SonarResponse> {
     const url = this.buildUrlForPrId(prId, config);
     console.log(`Fetching issues from PR ID: ${prId}`);
     console.log(`URL: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`);
