@@ -1,7 +1,6 @@
 {
   "name": "@davide97g/sonar-autofixer",
   "version": "1.0.0",
-  "private": true,
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "src/cli.js",
   "bin": {
