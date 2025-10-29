@@ -34,6 +34,7 @@ Process:
 
 1. Fix by rule clusters in small commits.
 2. Run lint scripts (optional)
+3. Open branch e create PR towards `develop` branch
 
 Pitfalls:
 
