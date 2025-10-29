@@ -11,15 +11,9 @@ const __dirname = path.dirname(__filename);
 
 const program = new Command();
 
-program
-  .name("sonar-autofixer")
-  .description("CLI for sonar-autofixer")
-  .version("1.0.0");
+program.name("sonar-autofixer").description("CLI for sonar-autofixer").version("1.0.0");
 
-const runNodeScript = (
-  relativeScriptPath: string,
-  args: string[] = []
-): void => {
+const runNodeScript = (relativeScriptPath: string, args: string[] = []): void => {
   const scriptPath = path.join(__dirname, relativeScriptPath);
   const result = spawnSync(process.execPath, [scriptPath, ...args], {
     stdio: "inherit",
