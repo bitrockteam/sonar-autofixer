@@ -186,6 +186,19 @@ npm run sonar:scan
 - **Configuration Management**: Interactive setup for easy configuration
 - **Update Checking**: Built-in command to check for updates and get latest version info
 
+## Tech Stack
+
+- **Language**: TypeScript (compiled to Node.js)
+- **Runtime**: Node.js (>= 22.21.0)
+- **Package Manager/Registry**: npm + GitHub Packages
+- **Build/Bundle**: TypeScript `tsc`
+- **TypeScript Native Reference**: [microsoft/typescript-go](https://github.com/microsoft/typescript-go) (TypeScript 7 native preview)
+- **Lint/Format**: Biome
+- **Lockfile**: Bun (for development reproducibility)
+- **APIs**: SonarQube/SonarCloud REST APIs, GitHub REST API, Bitbucket Cloud API
+- **Scanner**: `@sonar/scan` (local SonarQube scanner, installed globally)
+- **Editor Integrations**: Cursor, VSCode (Copilot), Windsurf rule templates
+
 ## Updating the CLI
 
 Since this CLI is designed to be used with `npx`, updating is simple:
