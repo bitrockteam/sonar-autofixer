@@ -1,6 +1,6 @@
 {
   "name": "@bitrockteam/sonarflow",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "dist/cli.js",
   "bin": {
@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsgo",
+    "dev": "tsgo --watch",
     "lint": "biome lint src",
     "lint:fix": "biome lint --write src",
     "format": "biome format --write src",

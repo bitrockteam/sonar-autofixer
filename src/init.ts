@@ -43,7 +43,7 @@ interface Config {
 }
 
 const runInit = async (): Promise<void> => {
-  console.log(dynamicGradient("Welcome to sonarflow setup!"));
+  console.log(dynamicGradient("Welcome to sonarflow setup!\n"));
 
   // Load package.json to derive sensible defaults
   const pkgPath = path.join(process.cwd(), "package.json");
@@ -275,12 +275,21 @@ const runInit = async (): Promise<void> => {
 
 const runBanner = async (): Promise<void> => {
   return new Promise((resolve) => {
+    const packageJsonPath = path.join(__dirname, "..", "package.json");
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+    const version = packageJson.version;
+
     figlet.text(
-      "Bitrock",
+      "Sonarflow",
       {
-        font: "ANSI Shadow",
+        // | "Standard"
+        // | "Big"
+        // | "Digital"
+        // | "Slant"
+        font: "Slant",
         horizontalLayout: "default",
         verticalLayout: "default",
+        width: 80,
       },
       (err, data) => {
         if (err) {
@@ -300,7 +309,8 @@ const runBanner = async (): Promise<void> => {
           console.clear();
 
           console.log(chalk.bold(dynamicGradient.multiline(lines.join("\n"))));
-          console.log(dynamicGradient("⚡ Empowering modern engineering ⚡"));
+          console.log(chalk.bold(dynamicGradient.multiline(`v${version}\n`)));
+          console.log(dynamicGradient("⚡@Bitrock - Empowering modern engineering ⚡"));
 
           i = (i + 1) % colors.length;
         }, 150); // Adjust speed here (lower = faster)
