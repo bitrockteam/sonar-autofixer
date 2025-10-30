@@ -104,6 +104,13 @@ npx @davide97g/sonar-autofixer scan
 npx @davide97g/sonar-autofixer init
 ```
 
+#### Check for Updates
+
+```bash
+# Check for updates and get latest version info
+npx @davide97g/sonar-autofixer update
+```
+
 ### As npm Scripts
 
 After initialization, you can use the added npm scripts:
@@ -125,6 +132,38 @@ npm run sonar:scan
 - **AI Editor Integration**: Creates rules for Cursor, VSCode, Windsurf for automated issue fixing
 - **Issue Summary**: Displays a summary of issues by severity after fetching
 - **Configuration Management**: Interactive setup for easy configuration
+- **Update Checking**: Built-in command to check for updates and get latest version info
+
+## Updating the CLI
+
+Since this CLI is designed to be used with `npx`, updating is simple:
+
+### Always Get the Latest Version
+
+```bash
+# Use @latest to always get the most recent version
+npx @davide97g/sonar-autofixer@latest <command>
+```
+
+### Check for Updates
+
+```bash
+# Check current version and get update instructions
+npx @davide97g/sonar-autofixer update
+```
+
+### Update Your npm Scripts
+
+If you've set up npm scripts in your `package.json`, update them to use `@latest`:
+
+```json
+{
+  "scripts": {
+    "sonar:fetch": "npx @davide97g/sonar-autofixer@latest fetch",
+    "sonar:scan": "npx @davide97g/sonar-autofixer@latest scan"
+  }
+}
+```
 
 ## How It Works
 
