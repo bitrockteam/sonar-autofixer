@@ -39,6 +39,7 @@
     "pull-request",
     "cli",
     "autofixer",
+    "sonarflow",
     "code-analysis"
   ],
   "author": "bitrockteam",

@@ -1,4 +1,4 @@
-# Sonar Autofixer
+# Sonarflow
 
 CLI utility for fetching SonarQube issues and running local SonarQube scans. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis. Includes AI editor integration for automated issue fixing. Supports GitHub and Bitbucket.
 
@@ -10,7 +10,8 @@ Since this package is published to GitHub Packages, you'll need to authenticate 
 
 Create or edit your `~/.npmrc` file to include:
 
-```
+```bash
+# .npmrc
 //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
 ```
 
@@ -24,7 +25,8 @@ npm login --scope=@bitrockteam --auth-type=legacy --registry=https://npm.pkg.git
 
 Add the following to your project's `.npmrc` file (or create one):
 
-```
+```bash
+# .npmrc
 @bitrockteam:registry=https://npm.pkg.github.com
 ```
 
@@ -55,7 +57,7 @@ This will:
 - Create `.sonarflowrc.json` with your project settings (repo, visibility, publicSonar, output path, preferred AI editor)
 - Add npm scripts to your `package.json`
 - Create AI editor rules for automated issue fixing (Cursor, VSCode, Windsurf)
- - Install a workspace icon theme so `.sonarflowrc.json` uses a custom icon in VS Code/Cursor
+- Install a workspace icon theme so `.sonarflowrc.json` uses a custom icon in VS Code/Cursor
 
 ### 2. Set Up Environment Variables
 
@@ -64,12 +66,11 @@ Create a `.env` file in your project root:
 ```env
 # Git Provider (shared)
 GIT_TOKEN=your-token                    # GitHub or Bitbucket token (required for PR detection)
-GIT_EMAIL=your-email@example.com        # Required for Bitbucket PR detection; optional for GitHub
+GIT_EMAIL=your-email@example.com        # Required for Bitbucket PR detection; optional for GitHub or if you already have configured `git config user.email`
 
 # GitHub (only if using GitHub)
 GITHUB_OWNER=your-username-or-org
 GITHUB_REPO=your-repo-name
-GITHUB_API_URL=https://api.github.com   # Optional, defaults to https://api.github.com
 
 # Bitbucket (only if using Bitbucket)
 BITBUCKET_BASE_URL=https://api.bitbucket.org/2.0/repositories  # Optional, has sane default
@@ -83,8 +84,38 @@ SONAR_PROJECT_KEY=your-project-key      # Used by local scanner command
 ```
 
 Notes:
+
 - If `.sonarflowrc.json` has `"publicSonar": true`, the scanner won’t require `SONAR_TOKEN`.
 - For Bitbucket PR detection, both `GIT_EMAIL` and `GIT_TOKEN` are required.
+
+## Access Tokens (How to Create + Required Scopes)
+
+To use this CLI you’ll need tokens for your Git provider and, when scanning private projects, for Sonar.
+
+- **GitHub Personal Access Token**
+  - **What you need**: Classic token with minimal scopes
+  - **Scopes**:
+    - `read:packages` (required to install from GitHub Packages)
+    - `repo` (required if your repository is private to detect PRs)
+  - **Guide**: [Create a GitHub personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+
+- **Bitbucket App Password**
+  - **What you need**: App password for Bitbucket Cloud
+  - **Permissions** (minimum recommended):
+    - Repositories: `Read`
+    - Pull requests: `Read`
+    - Account: `Read` (to resolve email/user when needed)
+  - You must also set `GIT_EMAIL` to your Bitbucket email in `.env`.
+  - **Guide**: [Bitbucket Cloud — App passwords](https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/)
+
+- **Sonar Token**
+  - Required only when scanning/fetching from private SonarQube/SonarCloud projects or when `.sonarflowrc.json` does not set `"publicSonar": true`.
+  - **Scope**: Standard user token (no special permissions typically needed beyond access to the project)
+  - **Guides**:
+    - SonarCloud: [Generating and using tokens](https://docs.sonarcloud.io/advanced-setup/user-accounts/generating-and-using-tokens/)
+    - SonarQube: [Generate and use tokens](https://docs.sonarsource.com/sonarqube/latest/user-guide/user-account/generate-and-use-tokens/)
+
+After creating tokens, place them in your `.env` as shown in the "Set Up Environment Variables" section above.
 
 ## Usage
 
@@ -164,26 +195,6 @@ Since this CLI is designed to be used with `npx`, updating is simple:
 ```bash
 # Use @latest to always get the most recent version
 npx @bitrockteam/sonarflow@latest <command>
-```
-
-### Check for Updates
-
-```bash
-# Check current version and get update instructions
-npx @bitrockteam/sonarflow update
-```
-
-### Update Your npm Scripts
-
-If you've set up npm scripts in your `package.json`, update them to use `@latest`:
-
-```json
-{
-  "scripts": {
-    "sonar:fetch": "npx @bitrockteam/sonarflow@latest fetch",
-    "sonar:scan": "npx @bitrockteam/sonarflow@latest scan"
-  }
-}
 ```
 
 ## How It Works

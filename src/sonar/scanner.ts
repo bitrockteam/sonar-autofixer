@@ -36,8 +36,8 @@ const runSonarScan = (): void => {
 
     // Get configuration from environment variables
     const sonarToken = process.env.SONAR_TOKEN;
-    const sonarProjectKey = process.env.SONAR_PROJECT_KEY || "bitrockteam_sonar-autofixer";
-    const sonarOrganization = process.env.SONAR_ORGANIZATION || "bitrockteam";
+    const sonarProjectKey = process.env.SONAR_PROJECT_KEY;
+    const sonarOrganization = process.env.SONAR_ORGANIZATION;
 
     // Validate required environment variables only when private sonar
     if (!publicSonar && !sonarToken) {
