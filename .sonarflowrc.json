@@ -1,0 +1,8 @@
+{
+  "repoName": "@bitrockteam/sonarflow",
+  "sonarProjectKey": "@bitrockteam/sonarflow",
+  "gitProvider": "github",
+  "repositoryVisibility": "public",
+  "publicSonar": true,
+  "aiEditor": "cursor"
+}

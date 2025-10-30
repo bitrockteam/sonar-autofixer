@@ -3,7 +3,9 @@
 import dotenv from "dotenv";
 import { execSync } from "node:child_process";
 import { dirname, join } from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
+import chalk from "chalk";
 
 // Load environment variables
 dotenv.config();
@@ -19,34 +21,48 @@ const __dirname = dirname(__filename);
  */
 const runSonarScan = (): void => {
   try {
+    // Load optional configuration to detect public sonar
+    const configPath = join(process.cwd(), ".sonarflowrc.json");
+    let publicSonar = false;
+    try {
+      if (fs.existsSync(configPath)) {
+        const raw = fs.readFileSync(configPath, "utf8");
+        const parsed = JSON.parse(raw) as { publicSonar?: boolean };
+        publicSonar = Boolean(parsed.publicSonar);
+      }
+    } catch {
+      publicSonar = false;
+    }
+
     // Get configuration from environment variables
     const sonarToken = process.env.SONAR_TOKEN;
-    const sonarProjectKey =
-      process.env.SONAR_PROJECT_KEY || "davide97g_sonar-autofixer";
-    const sonarOrganization = process.env.SONAR_ORGANIZATION || "davide97g";
+    const sonarProjectKey = process.env.SONAR_PROJECT_KEY;
+    const sonarOrganization = process.env.SONAR_ORGANIZATION;
 
-    // Validate required environment variables
-    if (!sonarToken) {
-      console.error("❌ Error: SONAR_TOKEN is not set in .env file");
-      console.error("Please create a .env file with SONAR_TOKEN=your-token");
+    // Validate required environment variables only when private sonar
+    if (!publicSonar && !sonarToken) {
+      console.error(chalk.red("❌ Error: SONAR_TOKEN is not set in .env file"));
+      console.error(
+        chalk.red(
+          "Please create a .env file with SONAR_TOKEN=your-token or set 'publicSonar' to true in .sonarflowrc.json"
+        )
+      );
       process.exit(1);
     }
 
-    console.log("🔍 Starting SonarQube local scan...");
-    console.log(`📦 Project Key: ${sonarProjectKey}`);
-    console.log(`🏢 Organization: ${sonarOrganization}`);
+    console.log(chalk.blue("🔍 Starting SonarQube local scan..."));
+    console.log(chalk.blue(`📦 Project Key: ${sonarProjectKey}`));
+    console.log(chalk.blue(`🏢 Organization: ${sonarOrganization}`));
 
     // Check if sonar scanner is installed
     try {
       execSync("which sonar", { encoding: "utf8", stdio: "ignore" });
     } catch (error) {
-      console.error("❌ Error: Sonar scanner (@sonar/scan) is not installed.");
+      console.error(chalk.red("❌ Error: Sonar scanner (@sonar/scan) is not installed."));
       console.error(
-        `Scanner check failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        chalk.red(`Scanner check failed: ${error instanceof Error ? error.message : String(error)}`)
       );
-      console.error("Please install it with: npm install -g @sonar/scan");
+      console.error(chalk.red("Please install it with: npm install -g @sonar/scan"));
       process.exit(1);
     }
 
@@ -54,7 +70,8 @@ const runSonarScan = (): void => {
     // Using same format as GitHub Actions workflow (-D prefix)
     // Adding dumpToFile to save results locally for local analysis
     const sonarArgs = [
-      `-Dsonar.token=${sonarToken}`,
+      // Only include token when sonar is private
+      ...(publicSonar ? [] : [`-Dsonar.token=${sonarToken}`]),
       `-Dsonar.projectKey=${sonarProjectKey}`,
       `-Dsonar.organization=${sonarOrganization}`,
       // Dump results to file locally for local analysis
@@ -63,11 +80,13 @@ const runSonarScan = (): void => {
 
     const command = `sonar ${sonarArgs.join(" ")}`;
 
-    console.log("\n🚀 Running Sonar Scanner...");
+    console.log(chalk.blue("\n🚀 Running Sonar Scanner..."));
     console.log(
-      `Command: sonar ${sonarArgs
-        .filter((arg) => !arg.includes("token"))
-        .join(" ")} (token hidden)`
+      chalk.blue(
+        publicSonar
+          ? `Command: sonar ${sonarArgs.join(" ")}`
+          : `Command: sonar ${sonarArgs.filter((arg) => !arg.includes("token")).join(" ")} (token hidden)`
+      )
     );
 
     // Execute sonar scan
@@ -76,23 +95,21 @@ const runSonarScan = (): void => {
       cwd: join(__dirname, ".."),
     });
 
-    console.log("\n✅ Sonar scan completed successfully!");
-    console.log("📁 Results saved to: .sonar/scanner-report.json");
+    console.log(chalk.green("\n✅ Sonar scan completed successfully!"));
+    console.log(chalk.blue("📁 Results saved to: .sonar/scanner-report.json"));
     console.log(
-      "💡 Note: This is a local scan. Results are saved to file for local analysis."
+      chalk.blue("💡 Note: This is a local scan. Results are saved to file for local analysis.")
     );
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("❌ Error running Sonar scan:", errorMessage);
+    console.error(chalk.red(`❌ Error running Sonar scan: ${errorMessage}`));
 
     // Provide helpful error messages
     if (
       (error as { status?: number }).status === 127 ||
       errorMessage.includes("command not found")
     ) {
-      console.error(
-        "\n💡 Tip: Install Sonar Scanner with: npm install -g @sonar/scan"
-      );
+      console.error(chalk.red("\n💡 Tip: Install Sonar Scanner with: npm install -g @sonar/scan"));
     }
 
     const execError = error as {
@@ -100,9 +117,9 @@ const runSonarScan = (): void => {
       stderr?: Buffer | string;
     };
     if (execError.stdout || execError.stderr) {
-      console.error("\nScanner output:");
-      if (execError.stdout) console.error(execError.stdout.toString());
-      if (execError.stderr) console.error(execError.stderr.toString());
+      console.error(chalk.red("\nScanner output:"));
+      if (execError.stdout) console.error(chalk.red(execError.stdout.toString()));
+      if (execError.stderr) console.error(chalk.red(execError.stderr.toString()));
     }
 
     process.exit(1);

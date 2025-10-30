@@ -1,36 +1,36 @@
 name: SonarQube Scan
 
 on:
-    push:
-        branches:
-            - main
-            - master
-    pull_request:
-        branches:
-            - main
-            - master
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
 
 jobs:
-    sonar-scan:
-        runs-on: ubuntu-latest
+  sonar-scan:
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-              with:
-                  fetch-depth: 0 # Shallow clones should be disabled for better analysis
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for better analysis
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-            - name: Install Sonar Scanner
-              run: npm install -g @sonar/scan
+      - name: Install Sonar Scanner
+        run: npm install -g @sonar/scan
 
-            - name: Run SonarQube Scan
-              run: |
-                  sonar \
-                    -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-                    -Dsonar.projectKey=davide97g_sonar-autofixer \
-                    -Dsonar.organization=davide97g
+      - name: Run SonarQube Scan
+        run: |
+          sonar \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.projectKey=bitrockteam_sonarflow \
+            -Dsonar.organization=bitrockteam

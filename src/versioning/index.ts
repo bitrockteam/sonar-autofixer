@@ -5,10 +5,14 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { SonarIssueExtractor } from "../sonar/sonar-issue-extractor.js";
+import chalk from "chalk";
 
 dotenv.config();
 
 interface Config {
+  repoName: string;
+  gitOrganization: string;
+  sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
   outputPath?: string;
   sonarBaseUrl?: string;
@@ -22,20 +26,14 @@ interface SonarIssuesResponse {
 }
 
 /**
- * Loads configuration from .sonar/autofixer.config.json
+ * Loads configuration from .sonarflowrc.json
  * @returns Configuration object
  */
 const loadConfiguration = (): Config => {
-  const configPath = path.join(
-    process.cwd(),
-    ".sonar",
-    "autofixer.config.json"
-  );
+  const configPath = path.join(process.cwd(), ".sonarflowrc.json");
 
   if (!fs.existsSync(configPath)) {
-    throw new Error(
-      "Configuration file not found: .sonar/autofixer.config.json"
-    );
+    throw new Error("Configuration file not found: .sonarflowrc.json");
   }
 
   const config = JSON.parse(fs.readFileSync(configPath, "utf8")) as Config;
@@ -59,16 +57,17 @@ const loadConfiguration = (): Config => {
  * @returns PR ID if found, null otherwise
  */
 const detectPrId = async (
+  repoName: string,
   branch: string,
+  organization: string,
   gitProvider: "github" | "bitbucket"
 ): Promise<string | null> => {
   const extractor = new SonarIssueExtractor();
-
   if (gitProvider === "github") {
     return await extractor.detectGitHubPrId(branch);
   }
   if (gitProvider === "bitbucket") {
-    return await extractor.detectBitbucketPrId(branch);
+    return await extractor.detectBitbucketPrId(branch, repoName, organization);
   }
 
   return null;
@@ -86,13 +85,12 @@ const fetchSonarIssues = async (
   try {
     // Load configuration
     const config = loadConfiguration();
-    console.log(`🔧 Using configuration: ${JSON.stringify(config, null, 2)}`);
+    console.log(chalk.blue(`🔧 Using configuration: ${JSON.stringify(config, null, 2)}`));
 
     // Get current git branch
     const currentBranch =
-      branchName ||
-      execSync("git branch --show-current", { encoding: "utf8" }).trim();
-    console.log(`Current branch: ${currentBranch}`);
+      branchName || execSync("git branch --show-current", { encoding: "utf8" }).trim();
+    console.log(chalk.blue(`Current branch: ${currentBranch}`));
 
     // Initialize SonarQube extractor
     const extractor = new SonarIssueExtractor();
@@ -102,28 +100,33 @@ const fetchSonarIssues = async (
 
     if (sonarPrLink) {
       // If PR link is provided, fetch issues from that PR
-      console.log(`Using provided SonarQube PR link: ${sonarPrLink}`);
+      console.log(chalk.blue(`Using provided SonarQube PR link: ${sonarPrLink}`));
       issues = await extractor.fetchIssuesForPr(sonarPrLink, config);
       usedSource = `PR: ${sonarPrLink}`;
     } else {
       // Try to automatically detect PR ID from current branch
-      const detectedPrId = await detectPrId(currentBranch, config.gitProvider);
+      const detectedPrId = await detectPrId(
+        config.repoName,
+        currentBranch,
+        config.gitOrganization,
+        config.gitProvider
+      );
 
       if (detectedPrId) {
         // Use detected PR ID
-        console.log(`🚀 Using automatically detected PR ID: ${detectedPrId}`);
+        console.log(chalk.green(`🚀 Using automatically detected PR ID: ${detectedPrId}`));
         issues = await extractor.fetchIssuesForPrId(detectedPrId, config);
         usedSource = `PR #${detectedPrId} (auto-detected from branch: ${currentBranch})`;
       } else {
         // Fallback to branch-based approach
-        console.log("📋 No PR detected, falling back to branch-based approach");
+        console.warn(chalk.yellow("📋 No PR detected, falling back to branch-based approach"));
         issues = await extractor.fetchIssuesForBranch(currentBranch, config);
         usedSource = currentBranch;
 
         // Fallback to develop if no issues found
         if (!issues.issues || issues.issues.length === 0) {
-          console.log(
-            "No issues found for current branch. Falling back to branch: develop"
+          console.warn(
+            chalk.yellow("No issues found for current branch. Falling back to branch: develop")
           );
           issues = await extractor.fetchIssuesForBranch("develop", config);
           usedSource = "develop";
@@ -142,11 +145,11 @@ const fetchSonarIssues = async (
     fs.writeFileSync(issuesPath, JSON.stringify(issues, null, 2));
 
     console.log(
-      `✅ Successfully fetched ${
-        issues.issues?.length || 0
-      } issues (source: ${usedSource})`
+      chalk.green(
+        `✅ Successfully fetched ${issues.issues?.length || 0} issues (source: ${usedSource})`
+      )
     );
-    console.log(`📁 Saved to: ${issuesPath}`);
+    console.log(chalk.blue(`📁 Saved to: ${issuesPath}`));
 
     // Display summary
     if (issues.issues && issues.issues.length > 0) {
@@ -156,17 +159,15 @@ const fetchSonarIssues = async (
         severityCounts[severity] = (severityCounts[severity] || 0) + 1;
       }
 
-      console.log("\n📊 Issues by severity:");
-      const sortedEntries = Object.entries(severityCounts).sort(
-        ([, a], [, b]) => b - a
-      );
+      console.log(chalk.blue("\n📊 Issues by severity:"));
+      const sortedEntries = Object.entries(severityCounts).sort(([, a], [, b]) => b - a);
       for (const [severity, count] of sortedEntries) {
-        console.log(`  ${severity}: ${count}`);
+        console.log(chalk.blue(`  ${severity}: ${count}`));
       }
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("❌ Error fetching SonarQube issues:", errorMessage);
+    console.error(chalk.red(`❌ Error fetching SonarQube issues: ${errorMessage}`));
     process.exit(1);
   }
 };

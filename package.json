@@ -1,27 +1,33 @@
 {
-  "name": "@davide97g/sonar-autofixer",
-  "version": "0.1.0",
+  "name": "@bitrockteam/sonarflow",
+  "version": "0.2.1",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "dist/cli.js",
   "bin": {
-    "sonar-autofixer": "./dist/cli.js"
+    "sonarflow": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsgo",
+    "dev": "tsgo --watch",
     "lint": "biome lint src",
     "lint:fix": "biome lint --write src",
     "format": "biome format --write src",
     "check": "biome check src",
     "check:fix": "biome check --write src",
-    "prepublishOnly": "echo 'Publishing @davide97g/sonar-autofixer...' && npm run build",
+    "prepublishOnly": "echo 'Publishing @bitrockteam/sonarflow...' && npm run build",
     "init": "node dist/cli.js init",
-    "sonar:scan": "npx davide97g:sonar-autofixer scan",
-    "sonar:fetch": "npx davide97g:sonar-autofixer fetch"
+    "scan": "node dist/cli.js scan",
+    "fetch": "node dist/cli.js fetch",
+    "sonar:scan": "npx @bitrockteam/sonarflow scan",
+    "sonar:fetch": "npx @bitrockteam/sonarflow fetch"
   },
-  "files": ["dist", "src/templates", "README.md", "package.json"],
+  "files": ["dist", "src/templates", "README.md", "package.json", ".vscode/icon-theme.json"],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/davide97g/sonar-autofixer.git"
+    "url": "git+https://github.com/bitrockteam/sonarflow.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "keywords": [
     "sonarqube",
@@ -34,14 +40,15 @@
     "pull-request",
     "cli",
     "autofixer",
+    "sonarflow",
     "code-analysis"
   ],
-  "author": "davide97g",
+  "author": "bitrockteam",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/davide97g/sonar-autofixer/issues"
+    "url": "https://github.com/bitrockteam/sonarflow/issues"
   },
-  "homepage": "https://github.com/davide97g/sonar-autofixer#readme",
+  "homepage": "https://github.com/bitrockteam/sonarflow#readme",
   "dependencies": {
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
@@ -59,6 +66,7 @@
   },
   "type": "module",
   "engines": {
-    "node": ">=18.0.0"
-  }
+    "node": ">=22.21.0"
+  },
+  "packageManager": "bun@1.3.1"
 }

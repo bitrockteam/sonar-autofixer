@@ -1,6 +1,10 @@
-# Sonar Autofixer
+# Sonarflow
 
-CLI utility for fetching SonarQube issues and running local SonarQube scans. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis. Includes AI editor integration for automated issue fixing.
+<p align="center">
+  <img src="./public/logo.svg" alt="Sonarflow logo" width="128" />
+</p>
+
+CLI utility for fetching SonarQube issues and running local SonarQube scans. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis. Includes AI editor integration for automated issue fixing. Supports GitHub and Bitbucket.
 
 ## Installation
 
@@ -10,34 +14,36 @@ Since this package is published to GitHub Packages, you'll need to authenticate 
 
 Create or edit your `~/.npmrc` file to include:
 
-```
+```bash
+# .npmrc
 //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
 ```
 
 Or use npm login:
 
 ```bash
-npm login --scope=@davide97g --auth-type=legacy --registry=https://npm.pkg.github.com
+npm login --scope=@bitrockteam --auth-type=legacy --registry=https://npm.pkg.github.com
 ```
 
 ### 2. Configure project .npmrc
 
 Add the following to your project's `.npmrc` file (or create one):
 
-```
-@davide97g:registry=https://npm.pkg.github.com
+```bash
+# .npmrc
+@bitrockteam:registry=https://npm.pkg.github.com
 ```
 
 ### 3. Install the package
 
 ```bash
-npm install @davide97g/sonar-autofixer
+npm install @bitrockteam/sonarflow
 ```
 
 Or install globally:
 
 ```bash
-npm install -g @davide97g/sonar-autofixer
+npm install -g @bitrockteam/sonarflow
 ```
 
 ## Quick Start
@@ -47,31 +53,73 @@ npm install -g @davide97g/sonar-autofixer
 Run the interactive setup to configure your project:
 
 ```bash
-npx @davide97g/sonar-autofixer init
+npx @bitrockteam/sonarflow init
 ```
 
 This will:
 
-- Create `.sonar/autofixer.config.json` with your project settings
+- Create `.sonarflowrc.json` with your project settings (repo, visibility, publicSonar, output path, preferred AI editor)
 - Add npm scripts to your `package.json`
 - Create AI editor rules for automated issue fixing (Cursor, VSCode, Windsurf)
+- Install a workspace icon theme so `.sonarflowrc.json` uses a custom icon in VS Code/Cursor
 
 ### 2. Set Up Environment Variables
 
 Create a `.env` file in your project root:
 
 ```env
-# GitHub Configuration
-GITHUB_TOKEN=your-github-token
-GITHUB_OWNER=your-username
+# Git Provider (shared)
+GIT_TOKEN=your-token                    # GitHub or Bitbucket token (required for PR detection)
+GIT_EMAIL=your-email@example.com        # Required for Bitbucket PR detection; optional for GitHub or if you already have configured `git config user.email`
+
+# GitHub (only if using GitHub)
+GITHUB_OWNER=your-username-or-org
 GITHUB_REPO=your-repo-name
 
+# Bitbucket (only if using Bitbucket)
+BITBUCKET_BASE_URL=https://api.bitbucket.org/2.0/repositories  # Optional, has sane default
+
 # SonarQube/SonarCloud Configuration
-SONAR_TOKEN=your-sonar-token
-SONAR_ORGANIZATION=your-organization
-SONAR_COMPONENT_KEYS=your-project-key
-SONAR_BASE_URL=https://sonarcloud.io/api/issues/search
+SONAR_TOKEN=your-sonar-token            # Required for private Sonar; not needed if publicSonar=true
+SONAR_ORGANIZATION=your-organization    # For SonarCloud
+SONAR_COMPONENT_KEYS=your-project-key   # For SonarCloud fetch
+SONAR_BASE_URL=https://sonarcloud.io/api/issues/search  # Optional override
+SONAR_PROJECT_KEY=your-project-key      # Used by local scanner command
 ```
+
+Notes:
+
+- If `.sonarflowrc.json` has `"publicSonar": true`, the scanner won’t require `SONAR_TOKEN`.
+- For Bitbucket PR detection, both `GIT_EMAIL` and `GIT_TOKEN` are required.
+
+## Access Tokens (How to Create + Required Scopes)
+
+To use this CLI you’ll need tokens for your Git provider and, when scanning private projects, for Sonar.
+
+- **GitHub Personal Access Token**
+  - **What you need**: Classic token with minimal scopes
+  - **Scopes**:
+    - `read:packages` (required to install from GitHub Packages)
+    - `repo` (required if your repository is private to detect PRs)
+  - **Guide**: [Create a GitHub personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token)
+
+- **Bitbucket App Password**
+  - **What you need**: App password for Bitbucket Cloud
+  - **Permissions** (minimum recommended):
+    - Repositories: `Read`
+    - Pull requests: `Read`
+    - Account: `Read` (to resolve email/user when needed)
+  - You must also set `GIT_EMAIL` to your Bitbucket email in `.env`.
+  - **Guide**: [Bitbucket Cloud — App passwords](https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/)
+
+- **Sonar Token**
+  - Required only when scanning/fetching from private SonarQube/SonarCloud projects or when `.sonarflowrc.json` does not set `"publicSonar": true`.
+  - **Scope**: Standard user token (no special permissions typically needed beyond access to the project)
+  - **Guides**:
+    - SonarCloud: [Generating and using tokens](https://docs.sonarcloud.io/advanced-setup/user-accounts/generating-and-using-tokens/)
+    - SonarQube: [Generate and use tokens](https://docs.sonarsource.com/sonarqube/latest/user-guide/user-account/generate-and-use-tokens/)
+
+After creating tokens, place them in your `.env` as shown in the "Set Up Environment Variables" section above.
 
 ## Usage
 
@@ -80,35 +128,42 @@ SONAR_BASE_URL=https://sonarcloud.io/api/issues/search
 #### Fetch SonarQube Issues
 
 ```bash
-# Fetch issues for current branch (auto-detects PR)
-npx @davide97g/sonar-autofixer fetch
+# Fetch issues for current branch (auto-detects PR on GitHub/Bitbucket)
+npx @bitrockteam/sonarflow fetch
 
 # Fetch issues for a specific branch
-npx @davide97g/sonar-autofixer fetch my-branch
+npx @bitrockteam/sonarflow fetch my-branch
 
 # Fetch issues from a SonarQube PR link
-npx @davide97g/sonar-autofixer fetch my-branch https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY
+npx @bitrockteam/sonarflow fetch my-branch https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY
 ```
+
+- Auto PR detection tries provider API first (GitHub or Bitbucket), then falls back to extracting from branch naming patterns.
+- Issues are saved to `.sonar/issues.json`.
 
 #### Run Local SonarQube Scan
 
 ```bash
 # Run local SonarQube scan
-npx @davide97g/sonar-autofixer scan
+npx @bitrockteam/sonarflow scan
 ```
+
+- Requires `@sonar/scan` installed globally.
+- Results are saved to `.sonar/scanner-report.json`.
+- If `publicSonar` is true in `.sonarflowrc.json`, `SONAR_TOKEN` is not required.
 
 #### Initialize Configuration
 
 ```bash
 # Interactive setup
-npx @davide97g/sonar-autofixer init
+npx @bitrockteam/sonarflow init
 ```
 
 #### Check for Updates
 
 ```bash
 # Check for updates and get latest version info
-npx @davide97g/sonar-autofixer update
+npx @bitrockteam/sonarflow update
 ```
 
 ### As npm Scripts
@@ -125,14 +180,28 @@ npm run sonar:scan
 
 ## Features
 
-- **Automatic PR Detection**: Automatically detects PR IDs from your current git branch using GitHub API
-- **Fallback Support**: Falls back to branch-based fetching if PR detection fails
-- **PR Link Support**: Directly fetch issues using a SonarQube PR link
+- **Automatic PR Detection**: Detects PR IDs from your current git branch using GitHub or Bitbucket APIs
+- **Fallback Support**: Falls back to branch-based extraction if PR detection fails
+- **PR Link Support**: Fetch issues directly using a SonarQube PR link
 - **Local Scanning**: Run SonarQube scans locally and save results
 - **AI Editor Integration**: Creates rules for Cursor, VSCode, Windsurf for automated issue fixing
+- **Custom Icon Theme**: Installs a local theme under `.vscode/icon-theme/` and sets `workbench.iconTheme` so `.sonarflowrc.json` is visually distinguished in your workspace
 - **Issue Summary**: Displays a summary of issues by severity after fetching
 - **Configuration Management**: Interactive setup for easy configuration
 - **Update Checking**: Built-in command to check for updates and get latest version info
+
+## Tech Stack
+
+- **Language**: TypeScript (compiled to Node.js)
+- **Runtime**: Node.js (>= 22.21.0)
+- **Package Manager/Registry**: npm + GitHub Packages
+- **Build/Bundle**: TypeScript `tsc`
+- **TypeScript Native Reference**: [microsoft/typescript-go](https://github.com/microsoft/typescript-go) (TypeScript 7 native preview)
+- **Lint/Format**: Biome
+- **Lockfile**: Bun (for development reproducibility)
+- **APIs**: SonarQube/SonarCloud REST APIs, GitHub REST API, Bitbucket Cloud API
+- **Scanner**: `@sonar/scan` (local SonarQube scanner, installed globally)
+- **Editor Integrations**: Cursor, VSCode (Copilot), Windsurf rule templates
 
 ## Updating the CLI
 
@@ -142,27 +211,7 @@ Since this CLI is designed to be used with `npx`, updating is simple:
 
 ```bash
 # Use @latest to always get the most recent version
-npx @davide97g/sonar-autofixer@latest <command>
-```
-
-### Check for Updates
-
-```bash
-# Check current version and get update instructions
-npx @davide97g/sonar-autofixer update
-```
-
-### Update Your npm Scripts
-
-If you've set up npm scripts in your `package.json`, update them to use `@latest`:
-
-```json
-{
-  "scripts": {
-    "sonar:fetch": "npx @davide97g/sonar-autofixer@latest fetch",
-    "sonar:scan": "npx @davide97g/sonar-autofixer@latest scan"
-  }
-}
+npx @bitrockteam/sonarflow@latest <command>
 ```
 
 ## How It Works
@@ -170,33 +219,35 @@ If you've set up npm scripts in your `package.json`, update them to use `@latest
 ### Fetch Command
 
 1. Detects the current git branch or uses provided branch name
-2. Attempts to find associated PR using GitHub API or branch name pattern matching
+2. Attempts to find associated PR using GitHub or Bitbucket API, or branch name pattern matching
 3. Fetches SonarQube issues for the PR or branch
 4. Saves issues to `.sonar/issues.json`
 5. Displays a summary of fetched issues
 
 ### Scan Command
 
-1. Validates SonarQube token and configuration
-2. Runs local SonarQube scanner
-3. Saves results to `.sonar/scanner-report.json`
-4. Provides detailed scan output
+1. Reads `.sonarflowrc.json` to determine if `publicSonar` is enabled
+2. Validates `SONAR_TOKEN` when required (private Sonar)
+3. Runs local SonarQube scanner
+4. Saves results to `.sonar/scanner-report.json`
+5. Provides detailed scan output
 
 ### Init Command
 
-1. Prompts for project configuration (repo name, git provider, etc.)
-2. Creates configuration file
-3. Updates package.json with npm scripts
+1. Prompts for project configuration (repo name, git provider, visibility, etc.)
+2. Creates configuration file `.sonarflowrc.json`
+3. Updates `package.json` with npm scripts
 4. Creates AI editor rules based on your editor choice
 
 ## Output Files
 
 - `.sonar/issues.json` - Fetched SonarQube issues in JSON format
 - `.sonar/scanner-report.json` - Local scan results
-- `.sonar/autofixer.config.json` - Project configuration
+- `.sonarflowrc.json` - Project configuration
 - `.cursor/rules/sonar-issue-fix.mdc` - Cursor AI rules (if selected)
 - `.vscode/sonar-issue-fix.md` - VSCode rules (if selected)
 - `.windsurf/rules/sonar-issue-fix.mdc` - Windsurf rules (if selected)
+- `.rules/sonar-issue-fix.md` - Generic rules (if selected "other")
 
 ## AI Editor Integration
 
@@ -205,14 +256,15 @@ The tool creates specific rules for your chosen AI editor to help with automated
 - **Cursor**: Creates `.cursor/rules/sonar-issue-fix.mdc`
 - **VSCode with Copilot**: Creates `.vscode/sonar-issue-fix.md`
 - **Windsurf**: Creates `.windsurf/rules/sonar-issue-fix.mdc`
+- **Other**: Creates `.rules/sonar-issue-fix.md`
 
 These rules provide patterns and priorities for fixing common SonarQube issues.
 
 ## Requirements
 
-- Node.js (v18 or higher)
+- Node.js (>= 22.21.0)
 - Git repository
-- GitHub API token with appropriate permissions
+- Git provider token (`GIT_TOKEN`) and, for Bitbucket, `GIT_EMAIL`
 - SonarQube/SonarCloud access
 - SonarQube Scanner (for local scans): `npm install -g @sonar/scan`
 
