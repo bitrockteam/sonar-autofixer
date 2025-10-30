@@ -41,7 +41,7 @@ interface Config {
 }
 
 const runInit = async (): Promise<void> => {
-  console.log(dynamicGradient(chalk.bold("Welcome to sonar-autofixer setup!")));
+  console.log(dynamicGradient("Welcome to sonar-autofixer setup!"));
 
   // Load package.json to derive sensible defaults
   const pkgPath = path.join(process.cwd(), "package.json");
@@ -200,7 +200,7 @@ const runInit = async (): Promise<void> => {
     } else if (editor === "windsurf") {
       targetRulePath = path.join(process.cwd(), ".windsurf/rules/sonar-issue-fix.mdc");
     } else {
-      targetRulePath = path.join(process.cwd(), "rules/sonar-issue-fix.md");
+      targetRulePath = path.join(process.cwd(), ".rules/sonar-issue-fix.md");
     }
 
     await fs.ensureDir(path.dirname(targetRulePath));
@@ -247,7 +247,7 @@ const runBanner = async (): Promise<void> => {
 
         setTimeout(() => {
           clearInterval(interval);
-          console.clear();
+          console.log("\n");
           resolve();
         }, 4000);
       }

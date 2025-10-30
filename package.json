@@ -18,7 +18,12 @@
     "sonar:scan": "npx davide97g:sonar-autofixer scan",
     "sonar:fetch": "npx davide97g:sonar-autofixer fetch"
   },
-  "files": ["dist", "src/templates", "README.md", "package.json"],
+  "files": [
+    "dist",
+    "src/templates",
+    "README.md",
+    "package.json"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/davide97g/sonar-autofixer.git"
