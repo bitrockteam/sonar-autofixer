@@ -1,6 +1,6 @@
 {
-  "name": "@davide97g/sonar-autofixer",
-  "version": "0.1.0",
+  "name": "@bitrockteam/sonar-autofixer",
+  "version": "0.1.1",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "dist/cli.js",
   "bin": {
@@ -13,15 +13,18 @@
     "format": "biome format --write src",
     "check": "biome check src",
     "check:fix": "biome check --write src",
-    "prepublishOnly": "echo 'Publishing @davide97g/sonar-autofixer...' && npm run build",
+    "prepublishOnly": "echo 'Publishing @bitrockteam/sonar-autofixer...' && npm run build",
     "init": "node dist/cli.js init",
-    "sonar:scan": "npx davide97g:sonar-autofixer scan",
-    "sonar:fetch": "npx davide97g:sonar-autofixer fetch"
+    "sonar:scan": "node dist/cli.js scan",
+    "sonar:fetch": "node dist/cli.js fetch"
   },
   "files": ["dist", "src/templates", "README.md", "package.json"],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/davide97g/sonar-autofixer.git"
+    "url": "git+https://github.com/bitrockteam/sonar-autofixer.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "keywords": [
     "sonarqube",
@@ -36,12 +39,12 @@
     "autofixer",
     "code-analysis"
   ],
-  "author": "davide97g",
+  "author": "bitrockteam",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/davide97g/sonar-autofixer/issues"
+    "url": "https://github.com/bitrockteam/sonar-autofixer/issues"
   },
-  "homepage": "https://github.com/davide97g/sonar-autofixer#readme",
+  "homepage": "https://github.com/bitrockteam/sonar-autofixer#readme",
   "dependencies": {
     "chalk": "^5.6.2",
     "commander": "^14.0.2",

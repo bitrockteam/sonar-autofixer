@@ -168,8 +168,8 @@ const runInit = async (): Promise<void> => {
       ? ((await fs.readJson(pkgPath)) as PackageJson)
       : {};
     if (!existingPkg.scripts) existingPkg.scripts = {};
-    existingPkg.scripts["sonar:scan"] = "npx davide97g:sonar-autofixer scan";
-    existingPkg.scripts["sonar:fetch"] = "npx davide97g:sonar-autofixer fetch";
+    existingPkg.scripts["sonar:scan"] = "npx @bitrockteam/sonar-autofixer scan";
+    existingPkg.scripts["sonar:fetch"] = "npx @bitrockteam/sonar-autofixer fetch";
     await fs.writeJson(pkgPath, existingPkg, { spaces: 2 });
     scriptsSpinner.succeed("package.json scripts updated");
   } catch (error) {
@@ -239,6 +239,7 @@ const runBanner = async (): Promise<void> => {
           const dynamicGradient = gradient(shifted);
 
           console.clear();
+
           console.log(chalk.bold(dynamicGradient.multiline(lines.join("\n"))));
           console.log(dynamicGradient("⚡ Empowering modern engineering ⚡"));
 

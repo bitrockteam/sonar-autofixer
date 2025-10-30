@@ -17,7 +17,7 @@ Create or edit your `~/.npmrc` file to include:
 Or use npm login:
 
 ```bash
-npm login --scope=@davide97g --auth-type=legacy --registry=https://npm.pkg.github.com
+npm login --scope=@bitrockteam --auth-type=legacy --registry=https://npm.pkg.github.com
 ```
 
 ### 2. Configure project .npmrc
@@ -25,19 +25,19 @@ npm login --scope=@davide97g --auth-type=legacy --registry=https://npm.pkg.githu
 Add the following to your project's `.npmrc` file (or create one):
 
 ```
-@davide97g:registry=https://npm.pkg.github.com
+@bitrockteam:registry=https://npm.pkg.github.com
 ```
 
 ### 3. Install the package
 
 ```bash
-npm install @davide97g/sonar-autofixer
+npm install @bitrockteam/sonar-autofixer
 ```
 
 Or install globally:
 
 ```bash
-npm install -g @davide97g/sonar-autofixer
+npm install -g @bitrockteam/sonar-autofixer
 ```
 
 ## Quick Start
@@ -47,7 +47,7 @@ npm install -g @davide97g/sonar-autofixer
 Run the interactive setup to configure your project:
 
 ```bash
-npx @davide97g/sonar-autofixer init
+npx @bitrockteam/sonar-autofixer init
 ```
 
 This will:
@@ -81,34 +81,34 @@ SONAR_BASE_URL=https://sonarcloud.io/api/issues/search
 
 ```bash
 # Fetch issues for current branch (auto-detects PR)
-npx @davide97g/sonar-autofixer fetch
+npx @bitrockteam/sonar-autofixer fetch
 
 # Fetch issues for a specific branch
-npx @davide97g/sonar-autofixer fetch my-branch
+npx @bitrockteam/sonar-autofixer fetch my-branch
 
 # Fetch issues from a SonarQube PR link
-npx @davide97g/sonar-autofixer fetch my-branch https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY
+npx @bitrockteam/sonar-autofixer fetch my-branch https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY
 ```
 
 #### Run Local SonarQube Scan
 
 ```bash
 # Run local SonarQube scan
-npx @davide97g/sonar-autofixer scan
+npx @bitrockteam/sonar-autofixer scan
 ```
 
 #### Initialize Configuration
 
 ```bash
 # Interactive setup
-npx @davide97g/sonar-autofixer init
+npx @bitrockteam/sonar-autofixer init
 ```
 
 #### Check for Updates
 
 ```bash
 # Check for updates and get latest version info
-npx @davide97g/sonar-autofixer update
+npx @bitrockteam/sonar-autofixer update
 ```
 
 ### As npm Scripts
@@ -142,14 +142,14 @@ Since this CLI is designed to be used with `npx`, updating is simple:
 
 ```bash
 # Use @latest to always get the most recent version
-npx @davide97g/sonar-autofixer@latest <command>
+npx @bitrockteam/sonar-autofixer@latest <command>
 ```
 
 ### Check for Updates
 
 ```bash
 # Check current version and get update instructions
-npx @davide97g/sonar-autofixer update
+npx @bitrockteam/sonar-autofixer update
 ```
 
 ### Update Your npm Scripts
@@ -159,8 +159,8 @@ If you've set up npm scripts in your `package.json`, update them to use `@latest
 ```json
 {
   "scripts": {
-    "sonar:fetch": "npx @davide97g/sonar-autofixer@latest fetch",
-    "sonar:scan": "npx @davide97g/sonar-autofixer@latest scan"
+    "sonar:fetch": "npx @bitrockteam/sonar-autofixer@latest fetch",
+    "sonar:scan": "npx @bitrockteam/sonar-autofixer@latest scan"
   }
 }
 ```

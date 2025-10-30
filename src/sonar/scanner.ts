@@ -21,9 +21,8 @@ const runSonarScan = (): void => {
   try {
     // Get configuration from environment variables
     const sonarToken = process.env.SONAR_TOKEN;
-    const sonarProjectKey =
-      process.env.SONAR_PROJECT_KEY || "davide97g_sonar-autofixer";
-    const sonarOrganization = process.env.SONAR_ORGANIZATION || "davide97g";
+    const sonarProjectKey = process.env.SONAR_PROJECT_KEY || "bitrockteam_sonar-autofixer";
+    const sonarOrganization = process.env.SONAR_ORGANIZATION || "bitrockteam";
 
     // Validate required environment variables
     if (!sonarToken) {
@@ -42,9 +41,7 @@ const runSonarScan = (): void => {
     } catch (error) {
       console.error("❌ Error: Sonar scanner (@sonar/scan) is not installed.");
       console.error(
-        `Scanner check failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`
+        `Scanner check failed: ${error instanceof Error ? error.message : String(error)}`
       );
       console.error("Please install it with: npm install -g @sonar/scan");
       process.exit(1);
@@ -65,9 +62,7 @@ const runSonarScan = (): void => {
 
     console.log("\n🚀 Running Sonar Scanner...");
     console.log(
-      `Command: sonar ${sonarArgs
-        .filter((arg) => !arg.includes("token"))
-        .join(" ")} (token hidden)`
+      `Command: sonar ${sonarArgs.filter((arg) => !arg.includes("token")).join(" ")} (token hidden)`
     );
 
     // Execute sonar scan
@@ -78,9 +73,7 @@ const runSonarScan = (): void => {
 
     console.log("\n✅ Sonar scan completed successfully!");
     console.log("📁 Results saved to: .sonar/scanner-report.json");
-    console.log(
-      "💡 Note: This is a local scan. Results are saved to file for local analysis."
-    );
+    console.log("💡 Note: This is a local scan. Results are saved to file for local analysis.");
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("❌ Error running Sonar scan:", errorMessage);
@@ -90,9 +83,7 @@ const runSonarScan = (): void => {
       (error as { status?: number }).status === 127 ||
       errorMessage.includes("command not found")
     ) {
-      console.error(
-        "\n💡 Tip: Install Sonar Scanner with: npm install -g @sonar/scan"
-      );
+      console.error("\n💡 Tip: Install Sonar Scanner with: npm install -g @sonar/scan");
     }
 
     const execError = error as {
