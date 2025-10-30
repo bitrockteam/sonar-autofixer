@@ -26,6 +26,7 @@ interface InitAnswers {
   repoName: string;
   sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
+  gitOrganization?: string;
   repositoryVisibility: "private" | "public";
   publicSonar: boolean;
   outputPath: string;
@@ -36,6 +37,7 @@ interface Config {
   repoName: string;
   sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
+  gitOrganization?: string;
   repositoryVisibility: "private" | "public";
   publicSonar: boolean;
   outputPath: string;
@@ -89,6 +91,13 @@ const runInit = async (): Promise<void> => {
           const isValid = /^@[^\n\/]+\/[^\n\/]+$/.test(input.trim());
           return isValid || "Use the format @org/repo";
         },
+      },
+      {
+        type: "input",
+        name: "gitOrganization",
+        message: "Organization (optional, for Git provider):",
+        default: "",
+        filter: (input: string) => input.trim(),
       },
       {
         type: "list",
@@ -152,6 +161,7 @@ const runInit = async (): Promise<void> => {
     repoName: answers.repoName,
     sonarProjectKey: answers.sonarProjectKey,
     gitProvider: answers.gitProvider,
+    gitOrganization: answers.gitOrganization?.trim() || undefined,
     repositoryVisibility: answers.repositoryVisibility,
     publicSonar: answers.publicSonar,
     outputPath: answers.outputPath,

@@ -9,6 +9,8 @@ import { SonarIssueExtractor } from "../sonar/sonar-issue-extractor.js";
 dotenv.config();
 
 interface Config {
+  repoName: string;
+  gitOrganization: string;
   sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
   outputPath?: string;
@@ -54,16 +56,17 @@ const loadConfiguration = (): Config => {
  * @returns PR ID if found, null otherwise
  */
 const detectPrId = async (
+  repoName: string,
   branch: string,
+  organization: string,
   gitProvider: "github" | "bitbucket"
 ): Promise<string | null> => {
   const extractor = new SonarIssueExtractor();
-
   if (gitProvider === "github") {
     return await extractor.detectGitHubPrId(branch);
   }
   if (gitProvider === "bitbucket") {
-    return await extractor.detectBitbucketPrId(branch);
+    return await extractor.detectBitbucketPrId(branch, repoName, organization);
   }
 
   return null;
@@ -101,7 +104,12 @@ const fetchSonarIssues = async (
       usedSource = `PR: ${sonarPrLink}`;
     } else {
       // Try to automatically detect PR ID from current branch
-      const detectedPrId = await detectPrId(currentBranch, config.gitProvider);
+      const detectedPrId = await detectPrId(
+        config.repoName,
+        currentBranch,
+        config.gitOrganization,
+        config.gitProvider
+      );
 
       if (detectedPrId) {
         // Use detected PR ID

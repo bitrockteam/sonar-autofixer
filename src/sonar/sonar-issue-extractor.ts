@@ -14,6 +14,9 @@ interface SonarResponse {
 }
 
 interface Config {
+  repoName: string;
+  gitOrganization: string;
+  sonarProjectKey: string;
   sonarBaseUrl?: string;
   publicSonar?: boolean;
   gitProvider?: string;
@@ -62,7 +65,8 @@ export class SonarIssueExtractor {
     this.githubRepo = process.env.GITHUB_REPO;
     this.githubBaseUrl = process.env.GITHUB_API_URL || "https://api.github.com";
 
-    this.bitbucketBaseUrl = process.env.BITBUCKET_BASE_URL;
+    this.bitbucketBaseUrl =
+      process.env.BITBUCKET_BASE_URL || "https://api.bitbucket.org/2.0/repositories";
 
     // SonarQube configuration
     this.sonarToken = process.env.SONAR_TOKEN;
@@ -194,7 +198,11 @@ export class SonarIssueExtractor {
    * @param branch - Branch name
    * @returns PR ID if found, null otherwise
    */
-  async detectBitbucketPrId(branch: string): Promise<string | null> {
+  async detectBitbucketPrId(
+    branch: string,
+    repoName: string,
+    organization: string
+  ): Promise<string | null> {
     try {
       if (!this.gitEmail || !this.gitToken || !this.bitbucketBaseUrl) {
         console.log("⚠️  Bitbucket configuration missing, skipping PR detection");
@@ -202,7 +210,7 @@ export class SonarIssueExtractor {
       }
 
       // Try to get PR number from Bitbucket API using the branch name
-      const bitbucketApiUrl = `${this.bitbucketBaseUrl}/pullrequests?q=source.branch.name="${branch}"`;
+      const bitbucketApiUrl = `${this.bitbucketBaseUrl}/${organization}/${repoName}/pullrequests?q=source.branch.name="${branch}"`;
       console.log(`🔍 Checking for PR associated with branch: ${branch}`);
 
       const response = await fetch(bitbucketApiUrl, {
@@ -291,7 +299,9 @@ export class SonarIssueExtractor {
     // SonarQube setup (private instance)
     const params = new URLSearchParams({
       branch,
-      components: "bat",
+      components: config.gitOrganization
+        ? `${config.gitOrganization}/sonar-autofixer`
+        : config.repoName,
       s: "FILE_LINE",
       inNewCodePeriod: "true",
       issueStatuses: "CONFIRMED,OPEN",
