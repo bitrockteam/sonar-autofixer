@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import fs from "fs-extra";
-import inquirer from "inquirer";
+import { input, select, confirm } from "@inquirer/prompts";
 import ora from "ora";
 import figlet from "figlet";
 import gradient from "gradient-string";
@@ -73,58 +73,90 @@ const runInit = async (): Promise<void> => {
 
   let answers: InitAnswers;
   try {
-    answers = await inquirer.prompt<InitAnswers>([
-      {
-        type: "input",
-        name: "repoName",
-        message: "Repo name?",
-        default: defaultRepoName,
-      },
-      {
-        type: "input",
-        name: "sonarProjectKey",
-        message: "Sonar project key (e.g., @org/repo)?",
-        default: defaultSonarProjectKey,
-        validate: (input: string) => {
-          const isValid = /^@[^\n\/]+\/[^\n\/]+$/.test(input.trim());
-          return isValid || "Use the format @org/repo";
+    const repoName = await input({
+      message: "Repository name?",
+      default: defaultRepoName,
+    });
+
+    const gitProvider = await select<"github" | "bitbucket">({
+      message: "Git provider:",
+      choices: [
+        { name: "github", value: "github" },
+        { name: "bitbucket", value: "bitbucket" },
+      ],
+      default: "github",
+    });
+
+    const repositoryVisibility = await select<"private" | "public">({
+      message: "Repository visibility:",
+      choices: [
+        { name: "private", value: "private" },
+        { name: "public", value: "public" },
+      ],
+      default: defaultVisibility as "private" | "public",
+    });
+
+    let gitOrganization: string | undefined;
+    if (repositoryVisibility === "private") {
+      gitOrganization = await input({
+        message: "Organization (required for private repos):",
+        validate: (val: string) => {
+          const trimmed = (val ?? "").trim();
+          return trimmed ? true : "Organization is required for private repositories";
         },
-      },
-      {
-        type: "input",
-        name: "gitOrganization",
-        message: "Organization (optional, for Git provider):",
         default: "",
-        filter: (input: string) => input.trim(),
+      });
+      gitOrganization = gitOrganization.trim();
+    }
+
+    const aiEditor = await select<"cursor" | "copilot (vscode)" | "windsurf" | "other">({
+      message: "AI editor:",
+      choices: [
+        { name: "cursor", value: "cursor" },
+        { name: "copilot (vscode)", value: "copilot (vscode)" },
+        { name: "windsurf", value: "windsurf" },
+        { name: "other", value: "other" },
+      ],
+      default: "cursor",
+    });
+
+    const publicSonar = await confirm({
+      message: "Is Sonar project public?",
+      default: true,
+    });
+
+    const sonarProjectKey = await input({
+      message: publicSonar
+        ? "Sonar project key (public, e.g., repo)?"
+        : "Sonar project key (private, e.g., @org/repo)?",
+      default: (() => {
+        if (publicSonar) {
+          const parts = defaultRepoName.split("/");
+          const base = parts[parts.length - 1] || defaultRepoName;
+          return base;
+        }
+        return defaultSonarProjectKey;
+      })(),
+      validate: (val: string) => {
+        const value = (val ?? "").trim();
+        if (publicSonar) {
+          const isValidPublic = /^[^\n\/]+$/.test(value);
+          return isValidPublic || "Use a simple repo name without @org/ (e.g., repo)";
+        }
+        const isValidPrivate = /^@[^\n\/]+\/[^\n\/]+$/.test(value);
+        return isValidPrivate || "Use the format @org/repo";
       },
-      {
-        type: "list",
-        name: "gitProvider",
-        message: "Git provider:",
-        choices: ["github", "bitbucket"],
-        default: "github",
-      },
-      {
-        type: "list",
-        name: "repositoryVisibility",
-        message: "Repository visibility:",
-        choices: ["private", "public"],
-        default: defaultVisibility,
-      },
-      {
-        type: "confirm",
-        name: "publicSonar",
-        message: "Public sonar?",
-        default: true, // Y/n
-      },
-      {
-        type: "list",
-        name: "aiEditor",
-        message: "AI editor:",
-        choices: ["cursor", "copilot (vscode)", "windsurf", "other"],
-        default: "cursor",
-      },
-    ]);
+    });
+
+    answers = {
+      repoName,
+      gitProvider,
+      repositoryVisibility,
+      gitOrganization,
+      aiEditor,
+      publicSonar,
+      sonarProjectKey,
+    };
   } catch (error) {
     // Handle graceful exit on SIGINT (Ctrl+C)
     if (

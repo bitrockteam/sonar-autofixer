@@ -21,7 +21,13 @@
     "sonar:scan": "npx @bitrockteam/sonarflow scan",
     "sonar:fetch": "npx @bitrockteam/sonarflow fetch"
   },
-  "files": ["dist", "src/templates", "README.md", "package.json", ".vscode/icon-theme.json"],
+  "files": [
+    "dist",
+    "src/templates",
+    "README.md",
+    "package.json",
+    ".vscode/icon-theme.json"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bitrockteam/sonarflow.git"
@@ -50,13 +56,13 @@
   },
   "homepage": "https://github.com/bitrockteam/sonarflow#readme",
   "dependencies": {
+    "@inquirer/prompts": "^7.9.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "dotenv": "^17.2.3",
     "figlet": "^1.9.3",
     "fs-extra": "^11.3.2",
     "gradient-string": "^3.0.0",
-    "inquirer": "^12.10.0",
     "ora": "^9.0.0"
   },
   "devDependencies": {
