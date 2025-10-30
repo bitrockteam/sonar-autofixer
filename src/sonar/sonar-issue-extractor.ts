@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import dotenv from "dotenv";
 import { execSync } from "node:child_process";
 
@@ -42,7 +43,7 @@ export class SonarIssueExtractor {
 
   constructor() {
     // GitHub configuration
-    this.gitToken = process.env.GITHUB_TOKEN;
+    this.gitToken = process.env.GIT_TOKEN;
     // Bitbucket configuration
     // Prefer env, fallback to local git config user.email
     const envGitEmail = process.env.GIT_EMAIL;
@@ -130,13 +131,13 @@ export class SonarIssueExtractor {
   async detectGitHubPrId(branch: string): Promise<string | null> {
     try {
       if (!this.gitToken || !this.githubOwner || !this.githubRepo) {
-        console.log("⚠️  GitHub configuration missing, skipping PR detection");
+        console.warn(chalk.yellow("⚠️  GitHub configuration missing, skipping PR detection"));
         return null;
       }
 
       // Try to get PR number from GitHub API using the branch name
       const githubApiUrl = `${this.githubBaseUrl}/repos/${this.githubOwner}/${this.githubRepo}/pulls?head=${this.githubOwner}:${branch}&state=open`;
-      console.log(`🔍 Checking for PR associated with branch: ${branch}`);
+      console.log(chalk.blue(`🔍 Checking for PR associated with branch: ${branch}`));
 
       const response = await fetch(githubApiUrl, {
         headers: {
@@ -149,7 +150,7 @@ export class SonarIssueExtractor {
         const data = (await response.json()) as Array<{ number: number }>;
         if (Array.isArray(data) && data.length > 0) {
           const prNumber = data[0].number;
-          console.log(`✅ Found PR #${prNumber} for branch: ${branch}`);
+          console.log(chalk.green(`✅ Found PR #${prNumber} for branch: ${branch}`));
           return prNumber.toString();
         }
       }
@@ -169,7 +170,7 @@ export class SonarIssueExtractor {
         }>;
         if (Array.isArray(closedData) && closedData.length > 0) {
           const prNumber = closedData[0].number;
-          console.log(`✅ Found PR #${prNumber} for branch: ${branch} (closed/merged)`);
+          console.log(chalk.green(`✅ Found PR #${prNumber} for branch: ${branch} (closed/merged)`));
           return prNumber.toString();
         }
       }
@@ -180,15 +181,15 @@ export class SonarIssueExtractor {
       const prNumberMatch = prNumberRegex.exec(branch);
       if (prNumberMatch) {
         const prNumber = prNumberMatch[1] || prNumberMatch[2];
-        console.log(`✅ Extracted PR #${prNumber} from branch name: ${branch}`);
+        console.log(chalk.green(`✅ Extracted PR #${prNumber} from branch name: ${branch}`));
         return prNumber || null;
       }
 
-      console.log(`⚠️  No PR found for branch: ${branch}`);
+      console.warn(chalk.yellow(`⚠️  No PR found for branch: ${branch}`));
       return null;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.log(`⚠️  Could not detect GitHub PR ID: ${errorMessage}`);
+      console.warn(chalk.yellow(`⚠️  Could not detect GitHub PR ID: ${errorMessage}`));
       return null;
     }
   }
@@ -205,13 +206,22 @@ export class SonarIssueExtractor {
   ): Promise<string | null> {
     try {
       if (!this.gitEmail || !this.gitToken || !this.bitbucketBaseUrl) {
-        console.log("⚠️  Bitbucket configuration missing, skipping PR detection");
+        console.warn(chalk.yellow("⚠️  Bitbucket configuration missing, skipping PR detection"));
+        if (!this.gitEmail) {
+          console.warn(chalk.yellow("⚠️  GIT_EMAIL is missing, skipping PR detection"));
+        }
+        if (!this.gitToken) {
+          console.warn(chalk.yellow("⚠️  GIT_TOKEN is missing, skipping PR detection"));
+        }
+        if (!this.bitbucketBaseUrl) {
+          console.warn(chalk.yellow("⚠️  BITBUCKET_BASE_URL is missing, skipping PR detection"));
+        }
         return null;
       }
 
       // Try to get PR number from Bitbucket API using the branch name
       const bitbucketApiUrl = `${this.bitbucketBaseUrl}/${organization}/${repoName}/pullrequests?q=source.branch.name="${branch}"`;
-      console.log(`🔍 Checking for PR associated with branch: ${branch}`);
+      console.log(chalk.blue(`🔍 Checking for PR associated with branch: ${branch}`));
 
       const response = await fetch(bitbucketApiUrl, {
         headers: this.getBitbucketAuthHeaders(),
@@ -223,7 +233,7 @@ export class SonarIssueExtractor {
         };
         if (data.values && data.values.length > 0) {
           const prNumber = data.values[0].id;
-          console.log(`✅ Found PR #${prNumber} for branch: ${branch}`);
+          console.log(chalk.green(`✅ Found PR #${prNumber} for branch: ${branch}`));
           return prNumber.toString();
         }
       }
@@ -234,15 +244,15 @@ export class SonarIssueExtractor {
       const prNumberMatch = prNumberRegex.exec(branch);
       if (prNumberMatch) {
         const prNumber = prNumberMatch[1] || prNumberMatch[2];
-        console.log(`✅ Extracted PR #${prNumber} from branch name: ${branch}`);
+        console.log(chalk.green(`✅ Extracted PR #${prNumber} from branch name: ${branch}`));
         return prNumber || null;
       }
 
-      console.log(`⚠️  No PR found for branch: ${branch}`);
+      console.warn(chalk.yellow(`⚠️  No PR found for branch: ${branch}`));
       return null;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.log(`⚠️  Could not detect Bitbucket PR ID: ${errorMessage}`);
+      console.warn(chalk.yellow(`⚠️  Could not detect Bitbucket PR ID: ${errorMessage}`));
       return null;
     }
   }
@@ -256,8 +266,8 @@ export class SonarIssueExtractor {
     const contentType = response.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
       const errorText = await response.text();
-      console.error(`Unexpected content type: ${contentType}`);
-      console.error(`Response preview: ${errorText.substring(0, 500)}`);
+      console.error(chalk.red(`Unexpected content type: ${contentType}`));
+      console.error(chalk.red(`Response preview: ${errorText.substring(0, 500)}`));
       throw new Error(
         `Expected JSON but got ${contentType}. Check authentication and API endpoint. Status: ${response.status}`
       );
@@ -410,7 +420,7 @@ export class SonarIssueExtractor {
    */
   async fetchIssuesForBranch(branch: string, config: Config): Promise<SonarResponse> {
     const url = this.buildUrlForBranch(branch, config);
-    console.log(`Fetching issues from: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`);
+    console.log(chalk.blue(`Fetching issues from: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`));
 
     const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {
@@ -432,7 +442,7 @@ export class SonarIssueExtractor {
    */
   async fetchIssuesForPr(prLink: string, config: Config): Promise<SonarResponse> {
     const url = this.buildUrlForPr(prLink, config);
-    console.log(`Fetching issues from PR: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`);
+    console.log(chalk.blue(`Fetching issues from PR: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`));
 
     const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {
@@ -454,8 +464,8 @@ export class SonarIssueExtractor {
    */
   async fetchIssuesForPrId(prId: string, config: Config): Promise<SonarResponse> {
     const url = this.buildUrlForPrId(prId, config);
-    console.log(`Fetching issues from PR ID: ${prId}`);
-    console.log(`URL: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`);
+    console.log(chalk.blue(`Fetching issues from PR ID: ${prId}`));
+    console.log(chalk.blue(`URL: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`));
 
     const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {

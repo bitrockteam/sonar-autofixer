@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
+import chalk from "chalk";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -61,28 +62,29 @@ const fetchLatestVersion = async (packageName: string): Promise<string | null> =
 const checkForUpdates = async (): Promise<void> => {
   try {
     const packageName = packageJson.name as string;
-    console.log(`Current version: ${currentVersion}`);
+    console.log(chalk.blue(`Current version: ${currentVersion}`));
     const latest = await fetchLatestVersion(packageName);
     if (latest) {
       const cmp = compareSemver(latest, currentVersion);
       if (cmp > 0) {
-        console.log(`New version available: ${latest}`);
-        console.log("\nHow to upgrade:");
-        console.log(`- npx ${packageName}@latest <command>`);
-        console.log(`- or update your devDependency: npm i -D ${packageName}@latest`);
+        console.log(chalk.blue(`New version available: ${latest}`));
+        console.log(chalk.blue("\nHow to upgrade:"));
+        console.log(chalk.blue(`- npx ${packageName}@latest <command>`));
+        console.log(chalk.blue(`- or update your devDependency: npm i -D ${packageName}@latest`));
       } else {
-        console.log("You're up to date.");
+        console.log(chalk.green("You're up to date."));
       }
     } else {
-      console.log("Could not check npm registry for latest version.");
+      console.warn(chalk.yellow("Could not check npm registry for latest version."));
     }
-    console.log("\nCommon commands with latest:");
-    console.log(`- npx ${packageName}@latest init`);
-    console.log(`- npx ${packageName}@latest fetch`);
-    console.log(`- npx ${packageName}@latest scan`);
-    console.log(`- npx ${packageName}@latest update`);
+    console.log(chalk.blue("\nCommon commands with latest:"));
+    console.log(chalk.blue(`- npx ${packageName}@latest init`));
+    console.log(chalk.blue(`- npx ${packageName}@latest fetch`));
+    console.log(chalk.blue(`- npx ${packageName}@latest scan`));
+    console.log(chalk.blue(`- npx ${packageName}@latest update`));
   } catch (error) {
-    console.error("❌ Error checking for updates:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(chalk.red(`❌ Error checking for updates: ${msg}`));
   }
 };
 
@@ -92,16 +94,18 @@ const checkForUpdates = async (): Promise<void> => {
 const showUpdateReminder = (): void => {
   const packageName = packageJson.name as string;
   console.log(
-    `\n💡 Tip: Use 'npx ${packageName}@latest <command>' to always get the latest version`
+    chalk.blue(
+      `\n💡 Tip: Use 'npx ${packageName}@latest <command>' to always get the latest version`
+    )
   );
-  console.log(`   Run 'npx ${packageName} update' to check for updates\n`);
+  console.log(chalk.blue(`   Run 'npx ${packageName} update' to check for updates\n`));
 };
 
 // Handle explicit version flags to also show update info
 const argv = process.argv.slice(2);
 const requestedVersion = argv.includes("-v") || argv.includes("--version");
 if (requestedVersion) {
-  console.log(currentVersion);
+  console.log(chalk.blue(currentVersion));
   await checkForUpdates();
   process.exit(0);
 }

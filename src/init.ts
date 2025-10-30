@@ -29,7 +29,6 @@ interface InitAnswers {
   gitOrganization?: string;
   repositoryVisibility: "private" | "public";
   publicSonar: boolean;
-  outputPath: string;
   aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
 }
 
@@ -40,7 +39,6 @@ interface Config {
   gitOrganization?: string;
   repositoryVisibility: "private" | "public";
   publicSonar: boolean;
-  outputPath: string;
   aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
 }
 
@@ -120,12 +118,6 @@ const runInit = async (): Promise<void> => {
         default: true, // Y/n
       },
       {
-        type: "input",
-        name: "outputPath",
-        message: "Output path:",
-        default: ".sonar/",
-      },
-      {
         type: "list",
         name: "aiEditor",
         message: "AI editor:",
@@ -164,7 +156,6 @@ const runInit = async (): Promise<void> => {
     gitOrganization: answers.gitOrganization?.trim() || undefined,
     repositoryVisibility: answers.repositoryVisibility,
     publicSonar: answers.publicSonar,
-    outputPath: answers.outputPath,
     aiEditor: answers.aiEditor,
   };
 
@@ -173,9 +164,7 @@ const runInit = async (): Promise<void> => {
     color: "yellow",
   }).start();
   try {
-    const sonarDir = path.join(process.cwd(), ".sonar");
-    await fs.ensureDir(sonarDir);
-    const configPath = path.join(sonarDir, "autofixer.config.json");
+    const configPath = path.join(process.cwd(), "sonar-autofixer.config.json");
     await fs.writeJson(configPath, config, { spaces: 2 });
     configSpinner.succeed(`Configuration saved to ${path.relative(process.cwd(), configPath)}`);
   } catch (error) {
@@ -238,6 +227,49 @@ const runInit = async (): Promise<void> => {
     process.exit(1);
   }
 
+  // 4) Configure VS Code/Cursor icon theme and filename association
+  const editorSpinner = ora({
+    text: "Configuring editor icon theme…",
+    color: "yellow",
+  }).start();
+  try {
+    const vscodeDir = path.join(process.cwd(), ".vscode");
+    const settingsPath = path.join(vscodeDir, "settings.json");
+    await fs.ensureDir(vscodeDir);
+
+    const settings: Record<string, unknown> = (await fs.pathExists(settingsPath))
+      ? ((await fs.readJson(settingsPath)) as Record<string, unknown>)
+      : {};
+
+    // Ensure Material Icon Theme is the active file icon theme
+    settings["workbench.iconTheme"] = "material-icon-theme";
+
+    // Merge file associations for Material Icon Theme
+    const associationsKey = "material-icon-theme.files.associations";
+    const existingAssociations =
+      typeof settings[associationsKey] === "object" && settings[associationsKey] !== null
+        ? (settings[associationsKey] as Record<string, string>)
+        : {};
+    settings[associationsKey] = {
+      ...existingAssociations,
+      "sonar-autofixer.config.json": "sonarcloud",
+    };
+
+    await fs.writeJson(settingsPath, settings, { spaces: 2 });
+    editorSpinner.succeed("Editor icon theme configured");
+
+    // Helpful note for users who don't have the theme installed
+    console.log(
+      chalk.yellow(
+        "Tip: Install the 'Material Icon Theme' extension for icons to apply in VS Code/Cursor."
+      )
+    );
+  } catch (error) {
+    editorSpinner.fail("Failed to configure editor icon theme");
+    console.error(chalk.red(error instanceof Error ? error.message : String(error)));
+    // Do not exit: optional step
+  }
+
   console.log(dynamicGradient("✅ Setup complete."));
 };
 
@@ -252,7 +284,8 @@ const runBanner = async (): Promise<void> => {
       },
       (err, data) => {
         if (err) {
-          console.error("❌ Figlet error:", err);
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(chalk.red(`❌ Figlet error: ${msg}`));
           return;
         }
 

@@ -30,5 +30,9 @@
   "sonarlint.connectedMode.project": {
     "connectionId": "https-eyecare-sonarqube-luxgroup-net-",
     "projectKey": "bat"
+  },
+  "workbench.iconTheme": "material-icon-theme",
+  "material-icon-theme.files.associations": {
+    "sonar-autofixer.config.json": "sonarcloud"
   }
 }
