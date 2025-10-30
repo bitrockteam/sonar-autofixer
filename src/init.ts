@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import fs from "fs-extra";
-import { input, select, confirm } from "@inquirer/prompts";
+import { input, select } from "@inquirer/prompts";
 import ora from "ora";
 import figlet from "figlet";
 import gradient from "gradient-string";
@@ -24,22 +24,33 @@ interface PackageJson {
 
 interface InitAnswers {
   repoName: string;
-  sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
-  gitOrganization?: string;
   repositoryVisibility: "private" | "public";
-  publicSonar: boolean;
+  gitOrganization?: string;
+
+  sonarOrganization?: string;
+  sonarProjectKey: string;
+  sonarMode: "standard" | "custom";
+  sonarBaseUrl?: string;
+
   aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
+  rulesFlavor: "safe" | "vibe-coder" | "yolo";
 }
 
 interface Config {
   repoName: string;
-  sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
-  gitOrganization?: string;
   repositoryVisibility: "private" | "public";
-  publicSonar: boolean;
+  gitOrganization?: string;
+
+  sonarOrganization?: string;
+  sonarProjectKey: string;
+  sonarMode: "standard" | "custom";
+  sonarBaseUrl?: string;
+  publicSonar?: boolean;
+
   aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
+  rulesFlavor: "safe" | "vibe-coder" | "yolo";
 }
 
 const runInit = async (): Promise<void> => {
@@ -67,9 +78,7 @@ const runInit = async (): Promise<void> => {
       ? pkg.name.trim()
       : path.basename(process.cwd());
   const defaultVisibility = pkg.private === true ? "private" : "public";
-  const defaultSonarProjectKey = defaultRepoName.includes("@")
-    ? defaultRepoName
-    : `@org/${defaultRepoName}`;
+  // no default for legacy @org/repo; we use simple repo name as base for project key
 
   let answers: InitAnswers;
   try {
@@ -96,18 +105,18 @@ const runInit = async (): Promise<void> => {
       default: defaultVisibility as "private" | "public",
     });
 
-    let gitOrganization: string | undefined;
-    if (repositoryVisibility === "private") {
-      gitOrganization = await input({
-        message: "Organization (required for private repos):",
-        validate: (val: string) => {
-          const trimmed = (val ?? "").trim();
-          return trimmed ? true : "Organization is required for private repositories";
-        },
-        default: "",
-      });
-      gitOrganization = gitOrganization.trim();
-    }
+    let gitOrganization = await input({
+      message: "Repository organization:",
+      default: "",
+      validate: (val: string) => {
+        const trimmed = (val ?? "").trim();
+        if (gitProvider === "bitbucket" || repositoryVisibility === "private") {
+          return trimmed ? true : "Organization is required for Bitbucket or private repositories";
+        }
+        return true;
+      },
+    });
+    gitOrganization = gitOrganization.trim();
 
     const aiEditor = await select<"cursor" | "copilot (vscode)" | "windsurf" | "other">({
       message: "AI editor:",
@@ -120,32 +129,64 @@ const runInit = async (): Promise<void> => {
       default: "cursor",
     });
 
-    const publicSonar = await confirm({
-      message: "Is Sonar project public?",
-      default: true,
+    const sonarMode = await select<"standard" | "custom">({
+      message: "Sonar mode:",
+      choices: [
+        { name: "standard (SonarCloud)", value: "standard" },
+        { name: "custom (self-hosted SonarQube)", value: "custom" },
+      ],
+      default: "standard",
     });
 
-    const sonarProjectKey = await input({
-      message: publicSonar
-        ? "Sonar project key (public, e.g., repo)?"
-        : "Sonar project key (private, e.g., @org/repo)?",
-      default: (() => {
-        if (publicSonar) {
-          const parts = defaultRepoName.split("/");
-          const base = parts[parts.length - 1] || defaultRepoName;
-          return base;
+    let sonarOrganization: string | undefined = await input({
+      message: "Sonar organization (required for standard mode):",
+      default: "",
+      validate: (val: string) => {
+        const trimmed = (val ?? "").trim();
+        if (sonarMode === "standard") {
+          return trimmed ? true : "Sonar organization is required in standard mode";
         }
-        return defaultSonarProjectKey;
+        return true;
+      },
+    });
+    sonarOrganization = sonarOrganization.trim() || undefined;
+
+    const sonarProjectKey = await input({
+      message: "Sonar project key (project name):",
+      default: (() => {
+        const parts = defaultRepoName.split("/");
+        const base = parts[parts.length - 1] || defaultRepoName;
+        return base;
       })(),
       validate: (val: string) => {
         const value = (val ?? "").trim();
-        if (publicSonar) {
-          const isValidPublic = /^[^\n\/]+$/.test(value);
-          return isValidPublic || "Use a simple repo name without @org/ (e.g., repo)";
-        }
-        const isValidPrivate = /^@[^\n\/]+\/[^\n\/]+$/.test(value);
-        return isValidPrivate || "Use the format @org/repo";
+        return value ? true : "Project key is required";
       },
+    });
+
+    let sonarBaseUrl: string | undefined = undefined;
+    if (sonarMode === "custom") {
+      sonarBaseUrl = await input({
+        message: "Sonar URL (base, e.g., https://sonar.mycompany.com):",
+        default: "",
+        validate: (val: string) => {
+          const trimmed = (val ?? "").trim();
+          return /^https?:\/\//.test(trimmed)
+            ? true
+            : "Provide a valid http(s) URL for custom mode";
+        },
+      });
+      sonarBaseUrl = sonarBaseUrl.trim();
+    }
+
+    const rulesFlavor = await select<"safe" | "vibe-coder" | "yolo">({
+      message: "Rules flavor:",
+      choices: [
+        { name: "safe", value: "safe" },
+        { name: "vibe-coder", value: "vibe-coder" },
+        { name: "yolo", value: "yolo" },
+      ],
+      default: "safe",
     });
 
     answers = {
@@ -154,8 +195,11 @@ const runInit = async (): Promise<void> => {
       repositoryVisibility,
       gitOrganization,
       aiEditor,
-      publicSonar,
+      sonarOrganization,
       sonarProjectKey,
+      sonarMode,
+      sonarBaseUrl,
+      rulesFlavor,
     };
   } catch (error) {
     // Handle graceful exit on SIGINT (Ctrl+C)
@@ -183,12 +227,20 @@ const runInit = async (): Promise<void> => {
   // 1) Write configuration file .sonarflowrc.json
   const config: Config = {
     repoName: answers.repoName,
-    sonarProjectKey: answers.sonarProjectKey,
     gitProvider: answers.gitProvider,
-    gitOrganization: answers.gitOrganization?.trim() || undefined,
     repositoryVisibility: answers.repositoryVisibility,
-    publicSonar: answers.publicSonar,
+    gitOrganization: answers.gitOrganization?.trim() || undefined,
+
+    // sonar
+    sonarOrganization: answers.sonarOrganization,
+    sonarProjectKey: answers.sonarProjectKey,
+    sonarMode: answers.sonarMode,
+    sonarBaseUrl: answers.sonarBaseUrl,
+    publicSonar: false,
+
+    // automation
     aiEditor: answers.aiEditor,
+    rulesFlavor: answers.rulesFlavor,
   };
 
   const configSpinner = ora({
@@ -288,12 +340,12 @@ const runInit = async (): Promise<void> => {
     };
 
     await fs.writeJson(settingsPath, settings, { spaces: 2 });
-    editorSpinner.succeed("Editor icon theme configured");
+    editorSpinner.succeed("Editor icon theme configured\n\n");
 
     // Helpful note for users who don't have the theme installed
     console.log(
-      chalk.yellow(
-        "Tip: Install the 'Material Icon Theme' extension for icons to apply in VS Code/Cursor."
+      chalk(
+        "Tip: Install the 'Material Icon Theme' extension for icons to apply in VS Code/Cursor.\n"
       )
     );
   } catch (error) {

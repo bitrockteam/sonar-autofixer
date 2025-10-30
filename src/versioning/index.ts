@@ -13,10 +13,13 @@ interface Config {
   repoName: string;
   gitOrganization: string;
   sonarProjectKey: string;
+  sonarOrganization?: string;
   gitProvider: "github" | "bitbucket";
   outputPath?: string;
   sonarBaseUrl?: string;
   publicSonar?: boolean;
+  sonarMode?: "standard" | "custom";
+  rulesFlavor?: "safe" | "vibe-coder" | "yolo";
   [key: string]: unknown;
 }
 

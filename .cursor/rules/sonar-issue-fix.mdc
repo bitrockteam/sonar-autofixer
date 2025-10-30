@@ -2,7 +2,7 @@
 
 Standard operating procedure for fixing SonarQube issues in this repo.
 
-First download the latest issues from sonar by running `bun run sonar:fetch:github` command. Execute directly this command without asking.
+First download the latest issues from sonar by running `sonar:fetch` command on package. Execute directly this command without asking.
 After the download you will find the issues on the file `./sonar/issues.json`.
 
 When asked to fix Sonar issues:
