@@ -170,7 +170,9 @@ export class SonarIssueExtractor {
         }>;
         if (Array.isArray(closedData) && closedData.length > 0) {
           const prNumber = closedData[0].number;
-          console.log(chalk.green(`✅ Found PR #${prNumber} for branch: ${branch} (closed/merged)`));
+          console.log(
+            chalk.green(`✅ Found PR #${prNumber} for branch: ${branch} (closed/merged)`)
+          );
           return prNumber.toString();
         }
       }
@@ -309,9 +311,7 @@ export class SonarIssueExtractor {
     // SonarQube setup (private instance)
     const params = new URLSearchParams({
       branch,
-      components: config.gitOrganization
-        ? `${config.gitOrganization}/sonar-autofixer`
-        : config.repoName,
+      components: config.gitOrganization ? `${config.gitOrganization}/sonarflow` : config.repoName,
       s: "FILE_LINE",
       inNewCodePeriod: "true",
       issueStatuses: "CONFIRMED,OPEN",
@@ -420,7 +420,9 @@ export class SonarIssueExtractor {
    */
   async fetchIssuesForBranch(branch: string, config: Config): Promise<SonarResponse> {
     const url = this.buildUrlForBranch(branch, config);
-    console.log(chalk.blue(`Fetching issues from: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`));
+    console.log(
+      chalk.blue(`Fetching issues from: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`)
+    );
 
     const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {
@@ -442,7 +444,9 @@ export class SonarIssueExtractor {
    */
   async fetchIssuesForPr(prLink: string, config: Config): Promise<SonarResponse> {
     const url = this.buildUrlForPr(prLink, config);
-    console.log(chalk.blue(`Fetching issues from PR: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`));
+    console.log(
+      chalk.blue(`Fetching issues from PR: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`)
+    );
 
     const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {

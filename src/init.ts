@@ -43,7 +43,7 @@ interface Config {
 }
 
 const runInit = async (): Promise<void> => {
-  console.log(dynamicGradient("Welcome to sonar-autofixer setup!"));
+  console.log(dynamicGradient("Welcome to sonarflow setup!"));
 
   // Load package.json to derive sensible defaults
   const pkgPath = path.join(process.cwd(), "package.json");
@@ -139,7 +139,7 @@ const runInit = async (): Promise<void> => {
       const exitGradient = dynamicGradient;
       console.log(
         exitGradient.multiline(
-          "👋 Setup cancelled\nThanks for trying sonar-autofixer!\nSee you next time ✨"
+          "👋 Setup cancelled\nThanks for trying sonarflow!\nSee you next time ✨"
         )
       );
       process.exit(0);
@@ -148,7 +148,7 @@ const runInit = async (): Promise<void> => {
     throw error;
   }
 
-  // 1) Write configuration file ./sonar/autofixer.config.json
+  // 1) Write configuration file .sonarflowrc.json
   const config: Config = {
     repoName: answers.repoName,
     sonarProjectKey: answers.sonarProjectKey,
@@ -164,7 +164,7 @@ const runInit = async (): Promise<void> => {
     color: "yellow",
   }).start();
   try {
-    const configPath = path.join(process.cwd(), "sonar-autofixer.config.json");
+    const configPath = path.join(process.cwd(), ".sonarflowrc.json");
     await fs.writeJson(configPath, config, { spaces: 2 });
     configSpinner.succeed(`Configuration saved to ${path.relative(process.cwd(), configPath)}`);
   } catch (error) {
@@ -183,8 +183,8 @@ const runInit = async (): Promise<void> => {
       ? ((await fs.readJson(pkgPath)) as PackageJson)
       : {};
     if (!existingPkg.scripts) existingPkg.scripts = {};
-    existingPkg.scripts["sonar:scan"] = "npx @bitrockteam/sonar-autofixer scan";
-    existingPkg.scripts["sonar:fetch"] = "npx @bitrockteam/sonar-autofixer fetch";
+    existingPkg.scripts["sonar:scan"] = "npx @bitrockteam/sonarflow scan";
+    existingPkg.scripts["sonar:fetch"] = "npx @bitrockteam/sonarflow fetch";
     await fs.writeJson(pkgPath, existingPkg, { spaces: 2 });
     scriptsSpinner.succeed("package.json scripts updated");
   } catch (error) {
@@ -252,7 +252,7 @@ const runInit = async (): Promise<void> => {
         : {};
     settings[associationsKey] = {
       ...existingAssociations,
-      "sonar-autofixer.config.json": "sonarcloud",
+      ".sonarflowrc.json": "sonarcloud",
     };
 
     await fs.writeJson(settingsPath, settings, { spaces: 2 });
@@ -330,7 +330,7 @@ await runInit().catch((error) => {
     const exitGradient = dynamicGradient;
     console.log(
       exitGradient.multiline(
-        "👋 Setup cancelled\nThanks for trying sonar-autofixer!\nSee you next time ✨"
+        "👋 Setup cancelled\nThanks for trying sonarflow!\nSee you next time ✨"
       )
     );
     process.exit(0);

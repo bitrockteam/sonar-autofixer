@@ -1,10 +1,10 @@
 {
-  "name": "@bitrockteam/sonar-autofixer",
-  "version": "0.1.7",
+  "name": "@bitrockteam/sonarflow",
+  "version": "0.2.0",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "dist/cli.js",
   "bin": {
-    "sonar-autofixer": "./dist/cli.js"
+    "sonarflow": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsgo",
@@ -13,23 +13,17 @@
     "format": "biome format --write src",
     "check": "biome check src",
     "check:fix": "biome check --write src",
-    "prepublishOnly": "echo 'Publishing @bitrockteam/sonar-autofixer...' && npm run build",
+    "prepublishOnly": "echo 'Publishing @bitrockteam/sonarflow...' && npm run build",
     "init": "node dist/cli.js init",
     "scan": "node dist/cli.js scan",
     "fetch": "node dist/cli.js fetch",
-    "sonar:scan": "npx @bitrockteam/sonar-autofixer scan",
-    "sonar:fetch": "npx @bitrockteam/sonar-autofixer fetch"
+    "sonar:scan": "npx @bitrockteam/sonarflow scan",
+    "sonar:fetch": "npx @bitrockteam/sonarflow fetch"
   },
-  "files": [
-    "dist",
-    "src/templates",
-    "README.md",
-    "package.json",
-    ".vscode/icon-theme.json"
-  ],
+  "files": ["dist", "src/templates", "README.md", "package.json", ".vscode/icon-theme.json"],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bitrockteam/sonar-autofixer.git"
+    "url": "git+https://github.com/bitrockteam/sonarflow.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
@@ -50,9 +44,9 @@
   "author": "bitrockteam",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/bitrockteam/sonar-autofixer/issues"
+    "url": "https://github.com/bitrockteam/sonarflow/issues"
   },
-  "homepage": "https://github.com/bitrockteam/sonar-autofixer#readme",
+  "homepage": "https://github.com/bitrockteam/sonarflow#readme",
   "dependencies": {
     "chalk": "^5.6.2",
     "commander": "^14.0.2",

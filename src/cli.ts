@@ -20,7 +20,7 @@ const packageJsonPath = path.join(__dirname, "..", "package.json");
 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
 const currentVersion = packageJson.version;
 
-program.name("sonar-autofixer").description("CLI for sonar-autofixer").version(currentVersion);
+program.name("sonarflow").description("CLI for sonarflow").version(currentVersion);
 
 const runNodeScript = (relativeScriptPath: string, args: string[] = []): void => {
   const scriptPath = path.join(__dirname, relativeScriptPath);
@@ -112,7 +112,7 @@ if (requestedVersion) {
 
 program
   .command("init")
-  .description("Initialize configuration for sonar-autofixer")
+  .description("Initialize configuration for sonarflow")
   .allowExcessArguments(true)
   .action(() => {
     runNodeScript("./init.js", process.argv.slice(3));

@@ -26,14 +26,14 @@ interface SonarIssuesResponse {
 }
 
 /**
- * Loads configuration from .sonar/autofixer.config.json
+ * Loads configuration from .sonarflowrc.json
  * @returns Configuration object
  */
 const loadConfiguration = (): Config => {
-  const configPath = path.join(process.cwd(), ".sonar", "autofixer.config.json");
+  const configPath = path.join(process.cwd(), ".sonarflowrc.json");
 
   if (!fs.existsSync(configPath)) {
-    throw new Error("Configuration file not found: .sonar/autofixer.config.json");
+    throw new Error("Configuration file not found: .sonarflowrc.json");
   }
 
   const config = JSON.parse(fs.readFileSync(configPath, "utf8")) as Config;

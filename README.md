@@ -31,13 +31,13 @@ Add the following to your project's `.npmrc` file (or create one):
 ### 3. Install the package
 
 ```bash
-npm install @bitrockteam/sonar-autofixer
+npm install @bitrockteam/sonarflow
 ```
 
 Or install globally:
 
 ```bash
-npm install -g @bitrockteam/sonar-autofixer
+npm install -g @bitrockteam/sonarflow
 ```
 
 ## Quick Start
@@ -47,15 +47,15 @@ npm install -g @bitrockteam/sonar-autofixer
 Run the interactive setup to configure your project:
 
 ```bash
-npx @bitrockteam/sonar-autofixer init
+npx @bitrockteam/sonarflow init
 ```
 
 This will:
 
-- Create `.sonar/autofixer.config.json` with your project settings (repo, visibility, publicSonar, output path, preferred AI editor)
+- Create `.sonarflowrc.json` with your project settings (repo, visibility, publicSonar, output path, preferred AI editor)
 - Add npm scripts to your `package.json`
 - Create AI editor rules for automated issue fixing (Cursor, VSCode, Windsurf)
- - Install a workspace icon theme so `sonar-autofixer.config.json` uses a custom icon in VS Code/Cursor
+ - Install a workspace icon theme so `.sonarflowrc.json` uses a custom icon in VS Code/Cursor
 
 ### 2. Set Up Environment Variables
 
@@ -83,7 +83,7 @@ SONAR_PROJECT_KEY=your-project-key      # Used by local scanner command
 ```
 
 Notes:
-- If `.sonar/autofixer.config.json` has `"publicSonar": true`, the scanner won’t require `SONAR_TOKEN`.
+- If `.sonarflowrc.json` has `"publicSonar": true`, the scanner won’t require `SONAR_TOKEN`.
 - For Bitbucket PR detection, both `GIT_EMAIL` and `GIT_TOKEN` are required.
 
 ## Usage
@@ -94,13 +94,13 @@ Notes:
 
 ```bash
 # Fetch issues for current branch (auto-detects PR on GitHub/Bitbucket)
-npx @bitrockteam/sonar-autofixer fetch
+npx @bitrockteam/sonarflow fetch
 
 # Fetch issues for a specific branch
-npx @bitrockteam/sonar-autofixer fetch my-branch
+npx @bitrockteam/sonarflow fetch my-branch
 
 # Fetch issues from a SonarQube PR link
-npx @bitrockteam/sonar-autofixer fetch my-branch https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY
+npx @bitrockteam/sonarflow fetch my-branch https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY
 ```
 
 - Auto PR detection tries provider API first (GitHub or Bitbucket), then falls back to extracting from branch naming patterns.
@@ -110,25 +110,25 @@ npx @bitrockteam/sonar-autofixer fetch my-branch https://sonarcloud.io/project/i
 
 ```bash
 # Run local SonarQube scan
-npx @bitrockteam/sonar-autofixer scan
+npx @bitrockteam/sonarflow scan
 ```
 
 - Requires `@sonar/scan` installed globally.
 - Results are saved to `.sonar/scanner-report.json`.
-- If `publicSonar` is true in `.sonar/autofixer.config.json`, `SONAR_TOKEN` is not required.
+- If `publicSonar` is true in `.sonarflowrc.json`, `SONAR_TOKEN` is not required.
 
 #### Initialize Configuration
 
 ```bash
 # Interactive setup
-npx @bitrockteam/sonar-autofixer init
+npx @bitrockteam/sonarflow init
 ```
 
 #### Check for Updates
 
 ```bash
 # Check for updates and get latest version info
-npx @bitrockteam/sonar-autofixer update
+npx @bitrockteam/sonarflow update
 ```
 
 ### As npm Scripts
@@ -150,7 +150,7 @@ npm run sonar:scan
 - **PR Link Support**: Fetch issues directly using a SonarQube PR link
 - **Local Scanning**: Run SonarQube scans locally and save results
 - **AI Editor Integration**: Creates rules for Cursor, VSCode, Windsurf for automated issue fixing
-- **Custom Icon Theme**: Installs a local theme under `.vscode/icon-theme/` and sets `workbench.iconTheme` so `sonar-autofixer.config.json` is visually distinguished in your workspace
+- **Custom Icon Theme**: Installs a local theme under `.vscode/icon-theme/` and sets `workbench.iconTheme` so `.sonarflowrc.json` is visually distinguished in your workspace
 - **Issue Summary**: Displays a summary of issues by severity after fetching
 - **Configuration Management**: Interactive setup for easy configuration
 - **Update Checking**: Built-in command to check for updates and get latest version info
@@ -163,14 +163,14 @@ Since this CLI is designed to be used with `npx`, updating is simple:
 
 ```bash
 # Use @latest to always get the most recent version
-npx @bitrockteam/sonar-autofixer@latest <command>
+npx @bitrockteam/sonarflow@latest <command>
 ```
 
 ### Check for Updates
 
 ```bash
 # Check current version and get update instructions
-npx @bitrockteam/sonar-autofixer update
+npx @bitrockteam/sonarflow update
 ```
 
 ### Update Your npm Scripts
@@ -180,8 +180,8 @@ If you've set up npm scripts in your `package.json`, update them to use `@latest
 ```json
 {
   "scripts": {
-    "sonar:fetch": "npx @bitrockteam/sonar-autofixer@latest fetch",
-    "sonar:scan": "npx @bitrockteam/sonar-autofixer@latest scan"
+    "sonar:fetch": "npx @bitrockteam/sonarflow@latest fetch",
+    "sonar:scan": "npx @bitrockteam/sonarflow@latest scan"
   }
 }
 ```
@@ -198,7 +198,7 @@ If you've set up npm scripts in your `package.json`, update them to use `@latest
 
 ### Scan Command
 
-1. Reads `.sonar/autofixer.config.json` to determine if `publicSonar` is enabled
+1. Reads `.sonarflowrc.json` to determine if `publicSonar` is enabled
 2. Validates `SONAR_TOKEN` when required (private Sonar)
 3. Runs local SonarQube scanner
 4. Saves results to `.sonar/scanner-report.json`
@@ -207,7 +207,7 @@ If you've set up npm scripts in your `package.json`, update them to use `@latest
 ### Init Command
 
 1. Prompts for project configuration (repo name, git provider, visibility, etc.)
-2. Creates configuration file `.sonar/autofixer.config.json`
+2. Creates configuration file `.sonarflowrc.json`
 3. Updates `package.json` with npm scripts
 4. Creates AI editor rules based on your editor choice
 
@@ -215,7 +215,7 @@ If you've set up npm scripts in your `package.json`, update them to use `@latest
 
 - `.sonar/issues.json` - Fetched SonarQube issues in JSON format
 - `.sonar/scanner-report.json` - Local scan results
-- `.sonar/autofixer.config.json` - Project configuration
+- `.sonarflowrc.json` - Project configuration
 - `.cursor/rules/sonar-issue-fix.mdc` - Cursor AI rules (if selected)
 - `.vscode/sonar-issue-fix.md` - VSCode rules (if selected)
 - `.windsurf/rules/sonar-issue-fix.mdc` - Windsurf rules (if selected)

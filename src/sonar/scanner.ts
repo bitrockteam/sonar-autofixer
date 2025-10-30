@@ -22,7 +22,7 @@ const __dirname = dirname(__filename);
 const runSonarScan = (): void => {
   try {
     // Load optional configuration to detect public sonar
-    const configPath = join(process.cwd(), ".sonar", "autofixer.config.json");
+    const configPath = join(process.cwd(), ".sonarflowrc.json");
     let publicSonar = false;
     try {
       if (fs.existsSync(configPath)) {
@@ -44,7 +44,7 @@ const runSonarScan = (): void => {
       console.error(chalk.red("❌ Error: SONAR_TOKEN is not set in .env file"));
       console.error(
         chalk.red(
-          "Please create a .env file with SONAR_TOKEN=your-token or set 'publicSonar' to true in .sonar/autofixer.config.json"
+          "Please create a .env file with SONAR_TOKEN=your-token or set 'publicSonar' to true in .sonarflowrc.json"
         )
       );
       process.exit(1);
@@ -60,9 +60,7 @@ const runSonarScan = (): void => {
     } catch (error) {
       console.error(chalk.red("❌ Error: Sonar scanner (@sonar/scan) is not installed."));
       console.error(
-        chalk.red(
-          `Scanner check failed: ${error instanceof Error ? error.message : String(error)}`
-        )
+        chalk.red(`Scanner check failed: ${error instanceof Error ? error.message : String(error)}`)
       );
       console.error(chalk.red("Please install it with: npm install -g @sonar/scan"));
       process.exit(1);

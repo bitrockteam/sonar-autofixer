@@ -33,6 +33,6 @@
   },
   "workbench.iconTheme": "material-icon-theme",
   "material-icon-theme.files.associations": {
-    "sonar-autofixer.config.json": "sonarcloud"
+    ".sonarflowrc.json": "sonarcloud"
   }
 }
