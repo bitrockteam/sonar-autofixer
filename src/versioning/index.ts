@@ -9,6 +9,7 @@ import { SonarIssueExtractor } from "../sonar/sonar-issue-extractor.js";
 dotenv.config();
 
 interface Config {
+  sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
   outputPath?: string;
   sonarBaseUrl?: string;
@@ -26,16 +27,10 @@ interface SonarIssuesResponse {
  * @returns Configuration object
  */
 const loadConfiguration = (): Config => {
-  const configPath = path.join(
-    process.cwd(),
-    ".sonar",
-    "autofixer.config.json"
-  );
+  const configPath = path.join(process.cwd(), ".sonar", "autofixer.config.json");
 
   if (!fs.existsSync(configPath)) {
-    throw new Error(
-      "Configuration file not found: .sonar/autofixer.config.json"
-    );
+    throw new Error("Configuration file not found: .sonar/autofixer.config.json");
   }
 
   const config = JSON.parse(fs.readFileSync(configPath, "utf8")) as Config;
@@ -90,8 +85,7 @@ const fetchSonarIssues = async (
 
     // Get current git branch
     const currentBranch =
-      branchName ||
-      execSync("git branch --show-current", { encoding: "utf8" }).trim();
+      branchName || execSync("git branch --show-current", { encoding: "utf8" }).trim();
     console.log(`Current branch: ${currentBranch}`);
 
     // Initialize SonarQube extractor
@@ -122,9 +116,7 @@ const fetchSonarIssues = async (
 
         // Fallback to develop if no issues found
         if (!issues.issues || issues.issues.length === 0) {
-          console.log(
-            "No issues found for current branch. Falling back to branch: develop"
-          );
+          console.log("No issues found for current branch. Falling back to branch: develop");
           issues = await extractor.fetchIssuesForBranch("develop", config);
           usedSource = "develop";
         }
@@ -142,9 +134,7 @@ const fetchSonarIssues = async (
     fs.writeFileSync(issuesPath, JSON.stringify(issues, null, 2));
 
     console.log(
-      `✅ Successfully fetched ${
-        issues.issues?.length || 0
-      } issues (source: ${usedSource})`
+      `✅ Successfully fetched ${issues.issues?.length || 0} issues (source: ${usedSource})`
     );
     console.log(`📁 Saved to: ${issuesPath}`);
 
@@ -157,9 +147,7 @@ const fetchSonarIssues = async (
       }
 
       console.log("\n📊 Issues by severity:");
-      const sortedEntries = Object.entries(severityCounts).sort(
-        ([, a], [, b]) => b - a
-      );
+      const sortedEntries = Object.entries(severityCounts).sort(([, a], [, b]) => b - a);
       for (const [severity, count] of sortedEntries) {
         console.log(`  ${severity}: ${count}`);
       }

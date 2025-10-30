@@ -24,6 +24,7 @@ interface PackageJson {
 
 interface InitAnswers {
   repoName: string;
+  sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
   repositoryVisibility: "private" | "public";
   publicSonar: boolean;
@@ -33,6 +34,7 @@ interface InitAnswers {
 
 interface Config {
   repoName: string;
+  sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
   repositoryVisibility: "private" | "public";
   publicSonar: boolean;
@@ -65,6 +67,9 @@ const runInit = async (): Promise<void> => {
       ? pkg.name.trim()
       : path.basename(process.cwd());
   const defaultVisibility = pkg.private === true ? "private" : "public";
+  const defaultSonarProjectKey = defaultRepoName.includes("@")
+    ? defaultRepoName
+    : `@org/${defaultRepoName}`;
 
   let answers: InitAnswers;
   try {
@@ -74,6 +79,16 @@ const runInit = async (): Promise<void> => {
         name: "repoName",
         message: "Repo name?",
         default: defaultRepoName,
+      },
+      {
+        type: "input",
+        name: "sonarProjectKey",
+        message: "Sonar project key (e.g., @org/repo)?",
+        default: defaultSonarProjectKey,
+        validate: (input: string) => {
+          const isValid = /^@[^\n\/]+\/[^\n\/]+$/.test(input.trim());
+          return isValid || "Use the format @org/repo";
+        },
       },
       {
         type: "list",
@@ -135,6 +150,7 @@ const runInit = async (): Promise<void> => {
   // 1) Write configuration file ./sonar/autofixer.config.json
   const config: Config = {
     repoName: answers.repoName,
+    sonarProjectKey: answers.sonarProjectKey,
     gitProvider: answers.gitProvider,
     repositoryVisibility: answers.repositoryVisibility,
     publicSonar: answers.publicSonar,

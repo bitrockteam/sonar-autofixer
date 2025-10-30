@@ -1,6 +1,6 @@
 {
   "name": "@bitrockteam/sonar-autofixer",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "dist/cli.js",
   "bin": {
@@ -15,10 +15,17 @@
     "check:fix": "biome check --write src",
     "prepublishOnly": "echo 'Publishing @bitrockteam/sonar-autofixer...' && npm run build",
     "init": "node dist/cli.js init",
-    "sonar:scan": "node dist/cli.js scan",
-    "sonar:fetch": "node dist/cli.js fetch"
+    "scan": "node dist/cli.js scan",
+    "fetch": "node dist/cli.js fetch",
+    "sonar:scan": "npx @bitrockteam/sonar-autofixer scan",
+    "sonar:fetch": "npx @bitrockteam/sonar-autofixer fetch"
   },
-  "files": ["dist", "src/templates", "README.md", "package.json"],
+  "files": [
+    "dist",
+    "src/templates",
+    "README.md",
+    "package.json"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bitrockteam/sonar-autofixer.git"

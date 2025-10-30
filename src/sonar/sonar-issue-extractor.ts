@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { execSync } from "node:child_process";
 
 dotenv.config();
 
@@ -23,13 +24,14 @@ interface Config {
  * SonarIssueExtractor - Handles all SonarQube API interactions and PR detection
  */
 export class SonarIssueExtractor {
-  private readonly githubToken: string | undefined;
+  private readonly gitEmail: string | undefined;
+  private readonly gitToken: string | undefined;
+
   private readonly githubOwner: string | undefined;
   private readonly githubRepo: string | undefined;
   private readonly githubBaseUrl: string;
-  private readonly bitbucketEmail: string | undefined;
-  private readonly bitbucketApiToken: string | undefined;
   private readonly bitbucketBaseUrl: string | undefined;
+
   private readonly sonarToken: string | undefined;
   private readonly sonarBaseUrlRaw: string;
   private readonly sonarComponentKeys: string | undefined;
@@ -37,20 +39,34 @@ export class SonarIssueExtractor {
 
   constructor() {
     // GitHub configuration
-    this.githubToken = process.env.GITHUB_TOKEN;
+    this.gitToken = process.env.GITHUB_TOKEN;
+    // Bitbucket configuration
+    // Prefer env, fallback to local git config user.email
+    const envGitEmail = process.env.GIT_EMAIL;
+    let detectedGitEmail: string | undefined;
+    if (!envGitEmail) {
+      try {
+        const email = execSync("git config --get user.email", {
+          stdio: ["ignore", "pipe", "ignore"],
+        })
+          .toString()
+          .trim();
+        detectedGitEmail = email || undefined;
+      } catch {
+        detectedGitEmail = undefined;
+      }
+    }
+    this.gitEmail = envGitEmail || detectedGitEmail;
+
     this.githubOwner = process.env.GITHUB_OWNER;
     this.githubRepo = process.env.GITHUB_REPO;
     this.githubBaseUrl = process.env.GITHUB_API_URL || "https://api.github.com";
 
-    // Bitbucket configuration
-    this.bitbucketEmail = process.env.BITBUCKET_EMAIL;
-    this.bitbucketApiToken = process.env.BITBUCKET_API_TOKEN;
     this.bitbucketBaseUrl = process.env.BITBUCKET_BASE_URL;
 
     // SonarQube configuration
     this.sonarToken = process.env.SONAR_TOKEN;
-    this.sonarBaseUrlRaw =
-      process.env.SONAR_BASE_URL || "https://sonarcloud.io/api/issues/search";
+    this.sonarBaseUrlRaw = process.env.SONAR_BASE_URL || "https://sonarcloud.io/api/issues/search";
     this.sonarComponentKeys = process.env.SONAR_COMPONENT_KEYS;
     this.sonarOrganization = process.env.SONAR_ORGANIZATION;
   }
@@ -77,13 +93,11 @@ export class SonarIssueExtractor {
    * @returns Authentication headers
    */
   getBitbucketAuthHeaders(): Record<string, string> {
-    if (!this.bitbucketEmail || !this.bitbucketApiToken) {
-      throw new Error("BITBUCKET_EMAIL and BITBUCKET_API_TOKEN are required");
+    if (!this.gitEmail || !this.gitToken) {
+      throw new Error("GIT_EMAIL and GIT_TOKEN are required");
     }
 
-    const auth = Buffer.from(
-      `${this.bitbucketEmail}:${this.bitbucketApiToken}`
-    ).toString("base64");
+    const auth = Buffer.from(`${this.gitEmail}:${this.gitToken}`).toString("base64");
     return {
       Authorization: `Basic ${auth}`,
     };
@@ -111,7 +125,7 @@ export class SonarIssueExtractor {
    */
   async detectGitHubPrId(branch: string): Promise<string | null> {
     try {
-      if (!this.githubToken || !this.githubOwner || !this.githubRepo) {
+      if (!this.gitToken || !this.githubOwner || !this.githubRepo) {
         console.log("⚠️  GitHub configuration missing, skipping PR detection");
         return null;
       }
@@ -122,7 +136,7 @@ export class SonarIssueExtractor {
 
       const response = await fetch(githubApiUrl, {
         headers: {
-          Authorization: `token ${this.githubToken}`,
+          Authorization: `token ${this.gitToken}`,
           Accept: "application/vnd.github.v3+json",
         },
       });
@@ -140,7 +154,7 @@ export class SonarIssueExtractor {
       const closedPrUrl = `${this.githubBaseUrl}/repos/${this.githubOwner}/${this.githubRepo}/pulls?head=${this.githubOwner}:${branch}&state=all`;
       const closedResponse = await fetch(closedPrUrl, {
         headers: {
-          Authorization: `token ${this.githubToken}`,
+          Authorization: `token ${this.gitToken}`,
           Accept: "application/vnd.github.v3+json",
         },
       });
@@ -151,9 +165,7 @@ export class SonarIssueExtractor {
         }>;
         if (Array.isArray(closedData) && closedData.length > 0) {
           const prNumber = closedData[0].number;
-          console.log(
-            `✅ Found PR #${prNumber} for branch: ${branch} (closed/merged)`
-          );
+          console.log(`✅ Found PR #${prNumber} for branch: ${branch} (closed/merged)`);
           return prNumber.toString();
         }
       }
@@ -171,8 +183,7 @@ export class SonarIssueExtractor {
       console.log(`⚠️  No PR found for branch: ${branch}`);
       return null;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.log(`⚠️  Could not detect GitHub PR ID: ${errorMessage}`);
       return null;
     }
@@ -185,14 +196,8 @@ export class SonarIssueExtractor {
    */
   async detectBitbucketPrId(branch: string): Promise<string | null> {
     try {
-      if (
-        !this.bitbucketEmail ||
-        !this.bitbucketApiToken ||
-        !this.bitbucketBaseUrl
-      ) {
-        console.log(
-          "⚠️  Bitbucket configuration missing, skipping PR detection"
-        );
+      if (!this.gitEmail || !this.gitToken || !this.bitbucketBaseUrl) {
+        console.log("⚠️  Bitbucket configuration missing, skipping PR detection");
         return null;
       }
 
@@ -228,8 +233,7 @@ export class SonarIssueExtractor {
       console.log(`⚠️  No PR found for branch: ${branch}`);
       return null;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.log(`⚠️  Could not detect Bitbucket PR ID: ${errorMessage}`);
       return null;
     }
@@ -254,10 +258,7 @@ export class SonarIssueExtractor {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(
-        `HTTP error! status: ${response.status}, body: ${errorText.substring(
-          0,
-          200
-        )}`
+        `HTTP error! status: ${response.status}, body: ${errorText.substring(0, 200)}`
       );
     }
 
@@ -271,16 +272,10 @@ export class SonarIssueExtractor {
    * @returns URL for fetching issues
    */
   buildUrlForBranch(branch: string, config: Config): string {
-    const sonarBaseUrl = this.normalizeSonarUrl(
-      config.sonarBaseUrl || this.sonarBaseUrlRaw
-    );
+    const sonarBaseUrl = this.normalizeSonarUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
 
     // Check if this is a SonarCloud setup (has organization and componentKeys)
-    if (
-      config.publicSonar &&
-      this.sonarComponentKeys &&
-      this.sonarOrganization
-    ) {
+    if (config.publicSonar && this.sonarComponentKeys && this.sonarOrganization) {
       const params = new URLSearchParams({
         s: "FILE_LINE",
         issueStatuses: "OPEN,CONFIRMED",
@@ -316,9 +311,7 @@ export class SonarIssueExtractor {
    * @returns URL for fetching issues
    */
   buildUrlForPr(prLink: string, config: Config): string {
-    const sonarBaseUrl = this.normalizeSonarUrl(
-      config.sonarBaseUrl || this.sonarBaseUrlRaw
-    );
+    const sonarBaseUrl = this.normalizeSonarUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
 
     // Extract PR key from the SonarQube PR link
     const prKeyMatch = prLink.match(/pullRequest=([^&]+)/);
@@ -331,11 +324,7 @@ export class SonarIssueExtractor {
     const prKey = prKeyMatch[1];
 
     // Check if this is a SonarCloud setup
-    if (
-      config.publicSonar &&
-      this.sonarComponentKeys &&
-      this.sonarOrganization
-    ) {
+    if (config.publicSonar && this.sonarComponentKeys && this.sonarOrganization) {
       const params = new URLSearchParams({
         s: "FILE_LINE",
         issueStatuses: "OPEN,CONFIRMED",
@@ -371,16 +360,10 @@ export class SonarIssueExtractor {
    * @returns URL for fetching issues
    */
   buildUrlForPrId(prId: string, config: Config): string {
-    const sonarBaseUrl = this.normalizeSonarUrl(
-      config.sonarBaseUrl || this.sonarBaseUrlRaw
-    );
+    const sonarBaseUrl = this.normalizeSonarUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
 
     // Check if this is a SonarCloud setup
-    if (
-      config.publicSonar &&
-      this.sonarComponentKeys &&
-      this.sonarOrganization
-    ) {
+    if (config.publicSonar && this.sonarComponentKeys && this.sonarOrganization) {
       const params = new URLSearchParams({
         s: "FILE_LINE",
         issueStatuses: "OPEN,CONFIRMED",
@@ -415,19 +398,11 @@ export class SonarIssueExtractor {
    * @param config - Configuration object
    * @returns Issues data
    */
-  async fetchIssuesForBranch(
-    branch: string,
-    config: Config
-  ): Promise<SonarResponse> {
+  async fetchIssuesForBranch(branch: string, config: Config): Promise<SonarResponse> {
     const url = this.buildUrlForBranch(branch, config);
-    console.log(
-      `Fetching issues from: ${url.replace(
-        /sonarToken=[^&]+/,
-        "sonarToken=***"
-      )}`
-    );
+    console.log(`Fetching issues from: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`);
 
-    const authHeaders = this.getSonarAuthHeaders(this.sonarToken);
+    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {
       headers: {
         ...authHeaders,
@@ -445,19 +420,11 @@ export class SonarIssueExtractor {
    * @param config - Configuration object
    * @returns Issues data
    */
-  async fetchIssuesForPr(
-    prLink: string,
-    config: Config
-  ): Promise<SonarResponse> {
+  async fetchIssuesForPr(prLink: string, config: Config): Promise<SonarResponse> {
     const url = this.buildUrlForPr(prLink, config);
-    console.log(
-      `Fetching issues from PR: ${url.replace(
-        /sonarToken=[^&]+/,
-        "sonarToken=***"
-      )}`
-    );
+    console.log(`Fetching issues from PR: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`);
 
-    const authHeaders = this.getSonarAuthHeaders(this.sonarToken);
+    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {
       headers: {
         ...authHeaders,
@@ -475,15 +442,12 @@ export class SonarIssueExtractor {
    * @param config - Configuration object
    * @returns Issues data
    */
-  async fetchIssuesForPrId(
-    prId: string,
-    config: Config
-  ): Promise<SonarResponse> {
+  async fetchIssuesForPrId(prId: string, config: Config): Promise<SonarResponse> {
     const url = this.buildUrlForPrId(prId, config);
     console.log(`Fetching issues from PR ID: ${prId}`);
     console.log(`URL: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`);
 
-    const authHeaders = this.getSonarAuthHeaders(this.sonarToken);
+    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {
       headers: {
         ...authHeaders,

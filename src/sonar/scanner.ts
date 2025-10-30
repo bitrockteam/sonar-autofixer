@@ -3,6 +3,7 @@
 import dotenv from "dotenv";
 import { execSync } from "node:child_process";
 import { dirname, join } from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
 // Load environment variables
@@ -19,15 +20,28 @@ const __dirname = dirname(__filename);
  */
 const runSonarScan = (): void => {
   try {
+    // Load optional configuration to detect public sonar
+    const configPath = join(process.cwd(), ".sonar", "autofixer.config.json");
+    let publicSonar = false;
+    try {
+      if (fs.existsSync(configPath)) {
+        const raw = fs.readFileSync(configPath, "utf8");
+        const parsed = JSON.parse(raw) as { publicSonar?: boolean };
+        publicSonar = Boolean(parsed.publicSonar);
+      }
+    } catch {
+      publicSonar = false;
+    }
+
     // Get configuration from environment variables
     const sonarToken = process.env.SONAR_TOKEN;
     const sonarProjectKey = process.env.SONAR_PROJECT_KEY || "bitrockteam_sonar-autofixer";
     const sonarOrganization = process.env.SONAR_ORGANIZATION || "bitrockteam";
 
-    // Validate required environment variables
-    if (!sonarToken) {
+    // Validate required environment variables only when private sonar
+    if (!publicSonar && !sonarToken) {
       console.error("❌ Error: SONAR_TOKEN is not set in .env file");
-      console.error("Please create a .env file with SONAR_TOKEN=your-token");
+      console.error("Please create a .env file with SONAR_TOKEN=your-token or set 'publicSonar' to true in .sonar/autofixer.config.json");
       process.exit(1);
     }
 
@@ -51,7 +65,8 @@ const runSonarScan = (): void => {
     // Using same format as GitHub Actions workflow (-D prefix)
     // Adding dumpToFile to save results locally for local analysis
     const sonarArgs = [
-      `-Dsonar.token=${sonarToken}`,
+      // Only include token when sonar is private
+      ...(publicSonar ? [] : [`-Dsonar.token=${sonarToken}`]),
       `-Dsonar.projectKey=${sonarProjectKey}`,
       `-Dsonar.organization=${sonarOrganization}`,
       // Dump results to file locally for local analysis
@@ -62,7 +77,9 @@ const runSonarScan = (): void => {
 
     console.log("\n🚀 Running Sonar Scanner...");
     console.log(
-      `Command: sonar ${sonarArgs.filter((arg) => !arg.includes("token")).join(" ")} (token hidden)`
+      publicSonar
+        ? `Command: sonar ${sonarArgs.join(" ")}`
+        : `Command: sonar ${sonarArgs.filter((arg) => !arg.includes("token")).join(" ")} (token hidden)`
     );
 
     // Execute sonar scan
