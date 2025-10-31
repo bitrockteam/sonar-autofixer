@@ -1,6 +1,6 @@
 {
   "name": "@bitrockteam/sonarflow",
-  "version": "0.2.3",
+  "version": "0.2.4-beta.0",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "dist/cli.js",
   "bin": {
