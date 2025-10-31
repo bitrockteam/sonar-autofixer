@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import chalk from "chalk";
 import fs from "fs-extra";
-import inquirer from "inquirer";
+import { input, select } from "@inquirer/prompts";
 import ora from "ora";
 import figlet from "figlet";
 import gradient from "gradient-string";
@@ -19,27 +19,41 @@ interface PackageJson {
   name?: string;
   private?: boolean;
   scripts?: Record<string, string>;
+  repository?: {
+    url?: string;
+  };
   [key: string]: unknown;
 }
 
 interface InitAnswers {
   repoName: string;
-  sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
-  gitOrganization?: string;
   repositoryVisibility: "private" | "public";
-  publicSonar: boolean;
+  gitOrganization?: string;
+
+  sonarOrganization?: string;
+  sonarProjectKey: string;
+  sonarMode: "standard" | "custom";
+  sonarBaseUrl?: string;
+
   aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
+  rulesFlavor: "safe" | "vibe-coder" | "yolo";
 }
 
 interface Config {
   repoName: string;
-  sonarProjectKey: string;
   gitProvider: "github" | "bitbucket";
-  gitOrganization?: string;
   repositoryVisibility: "private" | "public";
-  publicSonar: boolean;
+  gitOrganization?: string;
+
+  sonarOrganization?: string;
+  sonarProjectKey: string;
+  sonarMode: "standard" | "custom";
+  sonarBaseUrl?: string;
+  publicSonar?: boolean;
+
   aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
+  rulesFlavor: "safe" | "vibe-coder" | "yolo";
 }
 
 const runInit = async (): Promise<void> => {
@@ -66,65 +80,174 @@ const runInit = async (): Promise<void> => {
     typeof pkg.name === "string" && pkg.name.trim()
       ? pkg.name.trim()
       : path.basename(process.cwd());
+  const defaultGitProvider = pkg.repository?.url?.includes("bitbucket") ? "bitbucket" : "github";
   const defaultVisibility = pkg.private === true ? "private" : "public";
-  const defaultSonarProjectKey = defaultRepoName.includes("@")
-    ? defaultRepoName
-    : `@org/${defaultRepoName}`;
+  const defaultGitOrganization = defaultRepoName.includes("@")
+    ? defaultRepoName.split("/")[0]
+    : undefined;
+
+  const autoDetectAiEditor = () => {
+    if (fs.pathExistsSync(path.join(process.cwd(), ".cursor"))) {
+      return "cursor";
+    }
+    if (fs.pathExistsSync(path.join(process.cwd(), ".vscode"))) {
+      return "copilot (vscode)";
+    }
+    if (fs.pathExistsSync(path.join(process.cwd(), ".windsurf"))) {
+      return "windsurf";
+    }
+    return "other";
+  };
+  const defaultAiEditor = autoDetectAiEditor();
+
+  const autoDetectSonarModeAndProjectKey = () => {
+    const connectedModePath = path.join(process.cwd(), ".sonarlint/connectedMode.json");
+    if (fs.pathExistsSync(connectedModePath)) {
+      const connectedMode = JSON.parse(fs.readFileSync(connectedModePath as string, "utf8"));
+      return {
+        sonarMode: connectedMode.sonarQubeUri ? "custom" : "standard",
+        sonarQubeUri: connectedMode.sonarQubeUri,
+        sonarProjectKey: connectedMode.projectKey,
+      };
+    }
+    return {
+      sonarMode: "custom",
+      sonarQubeUri: undefined,
+      sonarProjectKey: "",
+    };
+  };
+  const {
+    sonarMode: defaultSonarMode,
+    sonarProjectKey: defaultSonarProjectKey,
+    sonarQubeUri: defaultSonarQubeUri,
+  } = autoDetectSonarModeAndProjectKey();
+
+  const defaultSonarOrganization = defaultRepoName.includes("@")
+    ? defaultRepoName.split("/")[0]
+    : undefined;
 
   let answers: InitAnswers;
   try {
-    answers = await inquirer.prompt<InitAnswers>([
-      {
-        type: "input",
-        name: "repoName",
-        message: "Repo name?",
-        default: defaultRepoName,
+    const repoName = await input({
+      message: "Repository name?",
+      default: defaultRepoName,
+    });
+
+    const gitProvider = await select<"github" | "bitbucket">({
+      message: "Git provider:",
+      choices: [
+        { name: "github", value: "github" },
+        { name: "bitbucket", value: "bitbucket" },
+      ],
+      default: defaultGitProvider,
+    });
+
+    const repositoryVisibility = await select<"private" | "public">({
+      message: "Repository visibility:",
+      choices: [
+        { name: "private", value: "private" },
+        { name: "public", value: "public" },
+      ],
+      default: defaultVisibility as "private" | "public",
+    });
+
+    let gitOrganization = await input({
+      message: "Repository organization:",
+      default: defaultGitOrganization ?? "",
+      validate: (val: string) => {
+        const trimmed = (val ?? "").trim();
+        if (gitProvider === "bitbucket" || repositoryVisibility === "private") {
+          return trimmed ? true : "Organization is required for Bitbucket or private repositories";
+        }
+        return true;
       },
-      {
-        type: "input",
-        name: "sonarProjectKey",
-        message: "Sonar project key (e.g., @org/repo)?",
-        default: defaultSonarProjectKey,
-        validate: (input: string) => {
-          const isValid = /^@[^\n\/]+\/[^\n\/]+$/.test(input.trim());
-          return isValid || "Use the format @org/repo";
+    });
+    gitOrganization = gitOrganization.trim();
+
+    const aiEditor = await select<"cursor" | "copilot (vscode)" | "windsurf" | "other">({
+      message: "AI editor:",
+      choices: [
+        { name: "cursor", value: "cursor" },
+        { name: "copilot (vscode)", value: "copilot (vscode)" },
+        { name: "windsurf", value: "windsurf" },
+        { name: "other", value: "other" },
+      ],
+      default: defaultAiEditor,
+    });
+
+    const sonarMode = await select<"standard" | "custom">({
+      message: "Sonar mode:",
+      choices: [
+        { name: "standard (SonarCloud)", value: "standard" },
+        { name: "custom (self-hosted SonarQube)", value: "custom" },
+      ],
+      default: defaultSonarMode,
+    });
+
+    let sonarOrganization: string | undefined = await input({
+      message: "Sonar organization (required for standard mode):",
+      default: defaultSonarOrganization ?? "",
+      validate: (val: string) => {
+        const trimmed = (val ?? "").trim();
+        if (sonarMode === "standard") {
+          return trimmed ? true : "Sonar organization is required in standard mode";
+        }
+        return true;
+      },
+    });
+    sonarOrganization = sonarOrganization.trim() || undefined;
+
+    const sonarProjectKey = await input({
+      message: "Sonar project key (project name):",
+      default: (() => {
+        if (defaultSonarProjectKey) return defaultSonarProjectKey;
+        const parts = defaultRepoName.split("/");
+        const base = parts[parts.length - 1] || defaultRepoName;
+        return base;
+      })(),
+      validate: (val: string) => {
+        const value = (val ?? "").trim();
+        return value ? true : "Project key is required";
+      },
+    });
+
+    let sonarBaseUrl: string | undefined = undefined;
+    if (sonarMode === "custom") {
+      sonarBaseUrl = await input({
+        message: "Sonar URL (base, e.g., https://sonar.mycompany.com):",
+        default: defaultSonarQubeUri,
+        validate: (val: string) => {
+          const trimmed = (val ?? "").trim();
+          return /^https?:\/\//.test(trimmed)
+            ? true
+            : "Provide a valid http(s) URL for custom mode";
         },
-      },
-      {
-        type: "input",
-        name: "gitOrganization",
-        message: "Organization (optional, for Git provider):",
-        default: "",
-        filter: (input: string) => input.trim(),
-      },
-      {
-        type: "list",
-        name: "gitProvider",
-        message: "Git provider:",
-        choices: ["github", "bitbucket"],
-        default: "github",
-      },
-      {
-        type: "list",
-        name: "repositoryVisibility",
-        message: "Repository visibility:",
-        choices: ["private", "public"],
-        default: defaultVisibility,
-      },
-      {
-        type: "confirm",
-        name: "publicSonar",
-        message: "Public sonar?",
-        default: true, // Y/n
-      },
-      {
-        type: "list",
-        name: "aiEditor",
-        message: "AI editor:",
-        choices: ["cursor", "copilot (vscode)", "windsurf", "other"],
-        default: "cursor",
-      },
-    ]);
+      });
+      sonarBaseUrl = sonarBaseUrl.trim();
+    }
+
+    const rulesFlavor = await select<"safe" | "vibe-coder" | "yolo">({
+      message: "Rules flavor:",
+      choices: [
+        { name: "safe", value: "safe" },
+        { name: "vibe-coder", value: "vibe-coder" },
+        { name: "yolo", value: "yolo" },
+      ],
+      default: "safe",
+    });
+
+    answers = {
+      repoName,
+      gitProvider,
+      repositoryVisibility,
+      gitOrganization,
+      aiEditor,
+      sonarOrganization,
+      sonarProjectKey,
+      sonarMode,
+      sonarBaseUrl,
+      rulesFlavor,
+    };
   } catch (error) {
     // Handle graceful exit on SIGINT (Ctrl+C)
     if (
@@ -151,12 +274,20 @@ const runInit = async (): Promise<void> => {
   // 1) Write configuration file .sonarflowrc.json
   const config: Config = {
     repoName: answers.repoName,
-    sonarProjectKey: answers.sonarProjectKey,
     gitProvider: answers.gitProvider,
-    gitOrganization: answers.gitOrganization?.trim() || undefined,
     repositoryVisibility: answers.repositoryVisibility,
-    publicSonar: answers.publicSonar,
+    gitOrganization: answers.gitOrganization?.trim() || undefined,
+
+    // sonar
+    sonarOrganization: answers.sonarOrganization,
+    sonarProjectKey: answers.sonarProjectKey,
+    sonarMode: answers.sonarMode,
+    sonarBaseUrl: answers.sonarBaseUrl,
+    publicSonar: false,
+
+    // automation
     aiEditor: answers.aiEditor,
+    rulesFlavor: answers.rulesFlavor,
   };
 
   const configSpinner = ora({
@@ -193,14 +324,21 @@ const runInit = async (): Promise<void> => {
     process.exit(1);
   }
 
-  // 3) Create rule file based on AI editor selection using src/templates/rule.md
+  // 3) Create rule file based on AI editor selection and rules flavor
   const ruleSpinner = ora({
     text: "Creating AI editor rule…",
     color: "yellow",
   }).start();
   try {
-    // Go up one level from dist to src, then to templates
-    const templateRulePath = path.join(__dirname, "../src/templates/rule.md");
+    // Resolve template by rules flavor
+    const flavor = answers.rulesFlavor;
+    const templateFilename =
+      flavor === "safe"
+        ? "rule-safe.md"
+        : flavor === "yolo"
+          ? "rule-yolo.md"
+          : "rule-vibe-coder.md";
+    const templateRulePath = path.join(__dirname, "../src/templates/", templateFilename);
     if (!(await fs.pathExists(templateRulePath))) {
       throw new Error(`Template rule not found at ${templateRulePath}`);
     }
@@ -256,12 +394,12 @@ const runInit = async (): Promise<void> => {
     };
 
     await fs.writeJson(settingsPath, settings, { spaces: 2 });
-    editorSpinner.succeed("Editor icon theme configured");
+    editorSpinner.succeed("Editor icon theme configured\n\n");
 
     // Helpful note for users who don't have the theme installed
     console.log(
-      chalk.yellow(
-        "Tip: Install the 'Material Icon Theme' extension for icons to apply in VS Code/Cursor."
+      chalk(
+        "Tip: Install the 'Material Icon Theme' extension for icons to apply in VS Code/Cursor.\n"
       )
     );
   } catch (error) {

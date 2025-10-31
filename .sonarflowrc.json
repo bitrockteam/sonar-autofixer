@@ -1,8 +1,13 @@
 {
   "repoName": "@bitrockteam/sonarflow",
-  "sonarProjectKey": "@bitrockteam/sonarflow",
   "gitProvider": "github",
   "repositoryVisibility": "public",
-  "publicSonar": true,
-  "aiEditor": "cursor"
+  "gitOrganization": "@bitrockteam",
+  "sonarOrganization": "bitrockteam",
+  "sonarProjectKey": "sonarflow",
+  "sonarMode": "custom",
+  "sonarBaseUrl": "https://bitrock.sonarcloud.io",
+  "publicSonar": false,
+  "aiEditor": "cursor",
+  "rulesFlavor": "yolo"
 }

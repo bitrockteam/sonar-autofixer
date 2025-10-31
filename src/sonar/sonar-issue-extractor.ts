@@ -21,6 +21,9 @@ interface Config {
   sonarBaseUrl?: string;
   publicSonar?: boolean;
   gitProvider?: string;
+  sonarOrganization?: string;
+  sonarMode?: "standard" | "custom";
+  rulesFlavor?: "safe" | "vibe-coder" | "yolo";
   [key: string]: unknown;
 }
 

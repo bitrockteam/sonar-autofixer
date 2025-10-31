@@ -1,9 +1,12 @@
-# sonar-issue-fix
+# sonar-issue-fix (VIBE-CODER)
 
-Standard operating procedure for fixing SonarQube issues in this repo.
+Standard operating procedure for fixing Sonar issues in this repo.
 
-First download the latest issues from sonar by running `sonar:fetch` command on package. Execute directly this command without asking.
-After the download you will find the issues on the file `./sonar/issues.json`.
+Fetching issues:
+
+- Do not auto-run commands. When issues are needed, ask the user to run:
+  - `sonar:fetch`
+- Issues will be available at `.sonar/issues.json` after the user runs the command.
 
 When asked to fix Sonar issues:
 
@@ -11,7 +14,7 @@ When asked to fix Sonar issues:
 - Only touch code related to the issue; avoid broad refactors.
 - Prefer early returns and readable control flow; remove nested ternaries.
 - Maintain or improve types; avoid `any`, avoid non-null assertions unless truly required.
-- Issues are found in ".sonar/issues.json"
+- Issues are found in `.sonar/issues.json`.
 
 Patterns:
 
@@ -29,13 +32,13 @@ Patterns:
 
 Process:
 
-1. Fix by rule clusters in small commits.
-2. Run lint scripts (optional)
+1. Fix by rule clusters in small commits. Do not auto-commit; prepare diffs only.
+2. Optionally suggest running lint/test scripts after changes.
 
 Versioning:
 
-For each issue type, grouped them and open a branch with meaningful name.
+- For each issue type, suggest grouping changes and meaningful branch naming.
 
 Pitfalls:
 
-- do not resolve TODOs there are actually there for future developments e.g. waiting for an external party or a functional requirement clarification
+- Do not resolve TODOs that are intentionally pending (waiting for third-party or requirements).
