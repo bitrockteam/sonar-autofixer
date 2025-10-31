@@ -1,6 +1,12 @@
 import chalk from "chalk";
 import dotenv from "dotenv";
 import { execSync } from "node:child_process";
+import { SonarUrlBuilder } from "./sonar-url-builder.js";
+import {
+  extractPrNumberFromBranch,
+  buildGitHubPrApiUrl,
+  buildBitbucketPrApiUrl,
+} from "./pr-detection-utils.js";
 
 dotenv.config();
 
@@ -41,8 +47,6 @@ export class SonarIssueExtractor {
 
   private readonly sonarToken: string | undefined;
   private readonly sonarBaseUrlRaw: string;
-  private readonly sonarComponentKeys: string | undefined;
-  private readonly sonarOrganization: string | undefined;
 
   constructor() {
     // GitHub configuration
@@ -75,8 +79,6 @@ export class SonarIssueExtractor {
     // SonarQube configuration
     this.sonarToken = process.env.SONAR_TOKEN;
     this.sonarBaseUrlRaw = process.env.SONAR_BASE_URL || "https://sonarcloud.io/api/issues/search";
-    this.sonarComponentKeys = process.env.SONAR_COMPONENT_KEYS;
-    this.sonarOrganization = process.env.SONAR_ORGANIZATION;
   }
 
   /**
@@ -111,20 +113,6 @@ export class SonarIssueExtractor {
     };
   }
 
-  /**
-   * Normalizes SonarQube base URL to API endpoint
-   * @param baseUrl - Raw base URL
-   * @returns Normalized API URL
-   */
-  normalizeSonarUrl(baseUrl: string): string {
-    let url = baseUrl;
-    if (!url.includes("/api/issues/search")) {
-      url = url.replace(/\/project\/issues[^/]*$/, "").replace(/\/$/, "");
-      url = url.replace(/\/api\/issues$/, "");
-      url = `${url}/api/issues/search`;
-    }
-    return url;
-  }
 
   /**
    * Detects GitHub PR ID from branch name
@@ -138,19 +126,19 @@ export class SonarIssueExtractor {
         return null;
       }
 
-      // Try to get PR number from GitHub API using the branch name
-      const githubApiUrl = `${this.githubBaseUrl}/repos/${this.githubOwner}/${this.githubRepo}/pulls?head=${this.githubOwner}:${branch}&state=open`;
       console.log(chalk.blue(`🔍 Checking for PR associated with branch: ${branch}`));
 
-      const response = await fetch(githubApiUrl, {
+      // Try to get PR number from GitHub API using the branch name (open PRs first)
+      const openPrUrl = buildGitHubPrApiUrl(this.githubBaseUrl, this.githubOwner, this.githubRepo, branch, "open");
+      const openResponse = await fetch(openPrUrl, {
         headers: {
           Authorization: `token ${this.gitToken}`,
           Accept: "application/vnd.github.v3+json",
         },
       });
 
-      if (response.ok) {
-        const data = (await response.json()) as Array<{ number: number }>;
+      if (openResponse.ok) {
+        const data = (await openResponse.json()) as Array<{ number: number }>;
         if (Array.isArray(data) && data.length > 0) {
           const prNumber = data[0].number;
           console.log(chalk.green(`✅ Found PR #${prNumber} for branch: ${branch}`));
@@ -159,7 +147,13 @@ export class SonarIssueExtractor {
       }
 
       // Also check closed PRs in case the branch is merged
-      const closedPrUrl = `${this.githubBaseUrl}/repos/${this.githubOwner}/${this.githubRepo}/pulls?head=${this.githubOwner}:${branch}&state=all`;
+      const closedPrUrl = buildGitHubPrApiUrl(
+        this.githubBaseUrl,
+        this.githubOwner,
+        this.githubRepo,
+        branch,
+        "all"
+      );
       const closedResponse = await fetch(closedPrUrl, {
         headers: {
           Authorization: `token ${this.gitToken}`,
@@ -168,9 +162,7 @@ export class SonarIssueExtractor {
       });
 
       if (closedResponse.ok) {
-        const closedData = (await closedResponse.json()) as Array<{
-          number: number;
-        }>;
+        const closedData = (await closedResponse.json()) as Array<{ number: number }>;
         if (Array.isArray(closedData) && closedData.length > 0) {
           const prNumber = closedData[0].number;
           console.log(
@@ -181,13 +173,9 @@ export class SonarIssueExtractor {
       }
 
       // Fallback: try to extract PR number from branch name
-      const prNumberRegex =
-        /(?:pr\/|PR\/|pull\/|PULL\/)(\d+)|(?:feat\/|feature\/|fix\/|bugfix\/).*?(\d+)/i;
-      const prNumberMatch = prNumberRegex.exec(branch);
-      if (prNumberMatch) {
-        const prNumber = prNumberMatch[1] || prNumberMatch[2];
-        console.log(chalk.green(`✅ Extracted PR #${prNumber} from branch name: ${branch}`));
-        return prNumber || null;
+      const extractedPr = extractPrNumberFromBranch(branch);
+      if (extractedPr) {
+        return extractedPr;
       }
 
       console.warn(chalk.yellow(`⚠️  No PR found for branch: ${branch}`));
@@ -202,6 +190,8 @@ export class SonarIssueExtractor {
   /**
    * Detects Bitbucket PR ID from branch name
    * @param branch - Branch name
+   * @param repoName - Repository name
+   * @param organization - Organization name
    * @returns PR ID if found, null otherwise
    */
   async detectBitbucketPrId(
@@ -224,10 +214,15 @@ export class SonarIssueExtractor {
         return null;
       }
 
-      // Try to get PR number from Bitbucket API using the branch name
-      const bitbucketApiUrl = `${this.bitbucketBaseUrl}/${organization}/${repoName}/pullrequests?q=source.branch.name="${branch}"`;
       console.log(chalk.blue(`🔍 Checking for PR associated with branch: ${branch}`));
 
+      // Try to get PR number from Bitbucket API using the branch name
+      const bitbucketApiUrl = buildBitbucketPrApiUrl(
+        this.bitbucketBaseUrl,
+        organization,
+        repoName,
+        branch
+      );
       const response = await fetch(bitbucketApiUrl, {
         headers: this.getBitbucketAuthHeaders(),
       });
@@ -244,13 +239,9 @@ export class SonarIssueExtractor {
       }
 
       // Fallback: try to extract PR number from branch name
-      const prNumberRegex =
-        /(?:pr\/|PR\/|pull\/|PULL\/)(\d+)|(?:feat\/|feature\/|fix\/|bugfix\/).*?(\d+)/i;
-      const prNumberMatch = prNumberRegex.exec(branch);
-      if (prNumberMatch) {
-        const prNumber = prNumberMatch[1] || prNumberMatch[2];
-        console.log(chalk.green(`✅ Extracted PR #${prNumber} from branch name: ${branch}`));
-        return prNumber || null;
+      const extractedPr = extractPrNumberFromBranch(branch);
+      if (extractedPr) {
+        return extractedPr;
       }
 
       console.warn(chalk.yellow(`⚠️  No PR found for branch: ${branch}`));
@@ -289,130 +280,61 @@ export class SonarIssueExtractor {
   }
 
   /**
-   * Builds URL for fetching issues by branch
-   * @param branch - Branch name
+   * Creates a SonarUrlBuilder instance from configuration
    * @param config - Configuration object
-   * @returns URL for fetching issues
+   * @returns SonarUrlBuilder instance
    */
-  buildUrlForBranch(branch: string, config: Config): string {
-    const sonarBaseUrl = this.normalizeSonarUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
-
-    // Check if this is a SonarCloud setup (has organization and componentKeys)
-    if (config.publicSonar && this.sonarComponentKeys && this.sonarOrganization) {
-      const params = new URLSearchParams({
-        s: "FILE_LINE",
-        issueStatuses: "OPEN,CONFIRMED",
-        ps: "100",
-        facets: "impactSoftwareQualities,impactSeverities",
-        componentKeys: this.sonarComponentKeys,
-        organization: this.sonarOrganization,
-        branch: branch,
-        additionalFields: "_all",
-      });
-      return `${sonarBaseUrl}?${params.toString()}`;
-    }
-    // SonarQube setup (private instance)
-    const params = new URLSearchParams({
-      branch,
-      components: config.gitOrganization ? `${config.gitOrganization}/sonarflow` : config.repoName,
-      s: "FILE_LINE",
-      inNewCodePeriod: "true",
-      issueStatuses: "CONFIRMED,OPEN",
-      ps: "100",
-      facets:
-        "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
-      additionalFields: "_all",
-      timeZone: "Europe/Rome",
-    });
-    return `${sonarBaseUrl}?${params.toString()}`;
+  private createUrlBuilder(config: Config): SonarUrlBuilder {
+    const baseUrl = SonarUrlBuilder.normalizeUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
+    return new SonarUrlBuilder(baseUrl, config);
   }
 
   /**
-   * Builds URL for fetching issues by PR link
+   * Extracts PR key from a SonarQube PR link
    * @param prLink - SonarQube PR link
-   * @param config - Configuration object
-   * @returns URL for fetching issues
+   * @returns PR key
+   * @throws Error if the link format is invalid
    */
-  buildUrlForPr(prLink: string, config: Config): string {
-    const sonarBaseUrl = this.normalizeSonarUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
-
-    // Extract PR key from the SonarQube PR link
+  private extractPrKeyFromLink(prLink: string): string {
     const prKeyMatch = prLink.match(/pullRequest=([^&]+)/);
     if (!prKeyMatch) {
       throw new Error(
         "Invalid SonarQube PR link format. Expected format: https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY"
       );
     }
-
-    const prKey = prKeyMatch[1];
-
-    // Check if this is a SonarCloud setup
-    if (config.publicSonar && this.sonarComponentKeys && this.sonarOrganization) {
-      const params = new URLSearchParams({
-        s: "FILE_LINE",
-        issueStatuses: "OPEN,CONFIRMED",
-        ps: "100",
-        facets: "impactSoftwareQualities,impactSeverities",
-        componentKeys: this.sonarComponentKeys,
-        organization: this.sonarOrganization,
-        pullRequest: prKey,
-        additionalFields: "_all",
-      });
-      return `${sonarBaseUrl}?${params.toString()}`;
-    }
-    // SonarQube setup (private instance)
-    const params = new URLSearchParams({
-      pullRequest: prKey,
-      components: "bat",
-      s: "FILE_LINE",
-      inNewCodePeriod: "true",
-      issueStatuses: "CONFIRMED,OPEN",
-      ps: "100",
-      facets:
-        "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
-      additionalFields: "_all",
-      timeZone: "Europe/Rome",
-    });
-    return `${sonarBaseUrl}?${params.toString()}`;
+    return prKeyMatch[1];
   }
 
   /**
-   * Builds URL for fetching issues by PR ID
-   * @param prId - PR ID
+   * Fetches SonarQube issues using the provided URL builder options
    * @param config - Configuration object
-   * @returns URL for fetching issues
+   * @param options - URL building options (branch or pullRequest)
+   * @param logMessage - Optional custom log message
+   * @returns Issues data
    */
-  buildUrlForPrId(prId: string, config: Config): string {
-    const sonarBaseUrl = this.normalizeSonarUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
+  private async fetchIssues(
+    config: Config,
+    options: { branch?: string; pullRequest?: string },
+    logMessage?: string
+  ): Promise<SonarResponse> {
+    const urlBuilder = this.createUrlBuilder(config);
+    const url = urlBuilder.buildUrl(options);
 
-    // Check if this is a SonarCloud setup
-    if (config.publicSonar && this.sonarComponentKeys && this.sonarOrganization) {
-      const params = new URLSearchParams({
-        s: "FILE_LINE",
-        issueStatuses: "OPEN,CONFIRMED",
-        ps: "100",
-        facets: "impactSoftwareQualities,impactSeverities",
-        componentKeys: this.sonarComponentKeys,
-        organization: this.sonarOrganization,
-        pullRequest: prId,
-        additionalFields: "_all",
-      });
-      return `${sonarBaseUrl}?${params.toString()}`;
+    if (logMessage) {
+      console.log(chalk.blue(logMessage));
     }
-    // SonarQube setup (private instance)
-    const params = new URLSearchParams({
-      pullRequest: prId,
-      components: "bat",
-      s: "FILE_LINE",
-      inNewCodePeriod: "true",
-      issueStatuses: "CONFIRMED,OPEN",
-      ps: "100",
-      facets:
-        "cleanCodeAttributeCategories,impactSoftwareQualities,severities,types,impactSeverities,codeVariants",
-      additionalFields: "_all",
-      timeZone: "Europe/Rome",
+    console.log(chalk.blue(`Fetching issues from: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`));
+
+    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
+    const response = await fetch(url, {
+      headers: {
+        ...authHeaders,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
     });
-    return `${sonarBaseUrl}?${params.toString()}`;
+
+    return await this.handleSonarResponse(response);
   }
 
   /**
@@ -422,21 +344,7 @@ export class SonarIssueExtractor {
    * @returns Issues data
    */
   async fetchIssuesForBranch(branch: string, config: Config): Promise<SonarResponse> {
-    const url = this.buildUrlForBranch(branch, config);
-    console.log(
-      chalk.blue(`Fetching issues from: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`)
-    );
-
-    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
-    const response = await fetch(url, {
-      headers: {
-        ...authHeaders,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    });
-
-    return await this.handleSonarResponse(response);
+    return await this.fetchIssues(config, { branch });
   }
 
   /**
@@ -446,21 +354,8 @@ export class SonarIssueExtractor {
    * @returns Issues data
    */
   async fetchIssuesForPr(prLink: string, config: Config): Promise<SonarResponse> {
-    const url = this.buildUrlForPr(prLink, config);
-    console.log(
-      chalk.blue(`Fetching issues from PR: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`)
-    );
-
-    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
-    const response = await fetch(url, {
-      headers: {
-        ...authHeaders,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    });
-
-    return await this.handleSonarResponse(response);
+    const prKey = this.extractPrKeyFromLink(prLink);
+    return await this.fetchIssues(config, { pullRequest: prKey }, `Fetching issues from PR: ${prLink}`);
   }
 
   /**
@@ -470,19 +365,10 @@ export class SonarIssueExtractor {
    * @returns Issues data
    */
   async fetchIssuesForPrId(prId: string, config: Config): Promise<SonarResponse> {
-    const url = this.buildUrlForPrId(prId, config);
-    console.log(chalk.blue(`Fetching issues from PR ID: ${prId}`));
-    console.log(chalk.blue(`URL: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`));
-
-    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
-    const response = await fetch(url, {
-      headers: {
-        ...authHeaders,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-    });
-
-    return await this.handleSonarResponse(response);
+    return await this.fetchIssues(
+      config,
+      { pullRequest: prId },
+      `Fetching issues from PR ID: ${prId}`
+    );
   }
 }

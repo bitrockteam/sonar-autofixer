@@ -314,7 +314,6 @@ const runInit = async (): Promise<void> => {
       ? ((await fs.readJson(pkgPath)) as PackageJson)
       : {};
     if (!existingPkg.scripts) existingPkg.scripts = {};
-    existingPkg.scripts["sonar:scan"] = "npx @bitrockteam/sonarflow scan";
     existingPkg.scripts["sonar:fetch"] = "npx @bitrockteam/sonarflow fetch";
     await fs.writeJson(pkgPath, existingPkg, { spaces: 2 });
     scriptsSpinner.succeed("package.json scripts updated");
