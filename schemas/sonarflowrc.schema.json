@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/bitrockteam/sonarflow/v0.2.2/schemas/sonarflowrc.schema.json",
+  "title": "Sonarflow Configuration Schema",
+  "description": "Schema for .sonarflowrc.json configuration file",
+  "type": "object",
+  "required": [
+    "repoName",
+    "gitProvider",
+    "repositoryVisibility",
+    "sonarProjectKey",
+    "sonarMode",
+    "aiEditor",
+    "rulesFlavor"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON schema reference for validation",
+      "pattern": "^https://raw\\.githubusercontent\\.com/bitrockteam/sonarflow/v[\\d\\.]+/schemas/sonarflowrc\\.schema\\.json$"
+    },
+    "repoName": {
+      "type": "string",
+      "description": "Repository name",
+      "minLength": 1
+    },
+    "gitProvider": {
+      "type": "string",
+      "enum": ["github", "bitbucket"],
+      "description": "Git provider platform"
+    },
+    "repositoryVisibility": {
+      "type": "string",
+      "enum": ["private", "public"],
+      "description": "Repository visibility setting"
+    },
+    "gitOrganization": {
+      "type": "string",
+      "description": "Git organization name (required for Bitbucket or private repositories)"
+    },
+    "sonarOrganization": {
+      "type": "string",
+      "description": "Sonar organization (required for standard mode)"
+    },
+    "sonarProjectKey": {
+      "type": "string",
+      "description": "Sonar project key (project name)",
+      "minLength": 1
+    },
+    "sonarMode": {
+      "type": "string",
+      "enum": ["standard", "custom"],
+      "description": "Sonar mode: 'standard' for SonarCloud, 'custom' for self-hosted SonarQube"
+    },
+    "sonarBaseUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://",
+      "description": "Base URL for custom SonarQube instance (required when sonarMode is 'custom')"
+    },
+    "publicSonar": {
+      "type": "boolean",
+      "description": "Whether Sonar instance is public (default: false)",
+      "default": false
+    },
+    "aiEditor": {
+      "type": "string",
+      "enum": ["cursor", "copilot (vscode)", "windsurf", "other"],
+      "description": "AI editor being used"
+    },
+    "rulesFlavor": {
+      "type": "string",
+      "enum": ["safe", "vibe-coder", "yolo"],
+      "description": "Rules flavor for AI code generation"
+    },
+    "outputPath": {
+      "type": "string",
+      "description": "Output path for sonar issues (default: '.sonar/')"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "sonarMode": {
+            "const": "standard"
+          }
+        },
+        "required": ["sonarMode"]
+      },
+      "then": {
+        "required": ["sonarOrganization"],
+        "properties": {
+          "sonarOrganization": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Sonar organization is required in standard mode"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "sonarMode": {
+            "const": "custom"
+          }
+        },
+        "required": ["sonarMode"]
+      },
+      "then": {
+        "required": ["sonarBaseUrl"],
+        "properties": {
+          "sonarBaseUrl": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://",
+            "minLength": 1,
+            "description": "sonarBaseUrl is required in custom mode"
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}
+
