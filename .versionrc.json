@@ -1,0 +1,18 @@
+{
+  "types": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance Improvements" },
+    { "type": "refactor", "section": "Code Refactoring" },
+    { "type": "docs", "section": "Documentation", "hidden": false },
+    { "type": "chore", "section": "Chores", "hidden": false },
+    { "type": "style", "hidden": true },
+    { "type": "test", "hidden": true }
+  ],
+  "releaseCommitMessageFormat": "chore(release): {{currentTag}}",
+  "scripts": {
+    "postbump": "node scripts/update-schema-version.js",
+    "postchangelog": "echo '✅ CHANGELOG.md updated successfully'"
+  },
+  "prerelease": "beta"
+}

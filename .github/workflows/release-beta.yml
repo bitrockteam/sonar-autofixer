@@ -1,0 +1,104 @@
+name: Beta Release
+
+on:
+  push:
+    branches:
+      - develop
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.versionrc.json'
+      - 'VERSIONING_STRATEGY.md'
+      - 'RELEASE_GUIDE.md'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Create Beta Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.1
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build project
+        run: bun run build
+
+      - name: Run linting
+        run: bun run check
+
+      - name: Create beta release
+        id: release
+        run: |
+          # Check if there are any commits since last tag that warrant a release
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          # Get all tags to find latest beta tag
+          git fetch --tags
+          LATEST_BETA_TAG=$(git tag -l "*beta*" | sort -V | tail -1 || echo "")
+          LATEST_PROD_TAG=$(git tag -l "v*" --exclude="*beta*" | sort -V | tail -1 || echo "")
+          
+          # Use the latest tag (either beta or prod) as reference
+          REF_TAG=${LATEST_BETA_TAG:-${LATEST_PROD_TAG:-${LAST_TAG}}}
+          
+          if [ -z "$REF_TAG" ]; then
+            echo "No previous tag found, skipping beta release"
+            exit 0
+          fi
+          
+          # Check if there are any conventional commits since reference tag
+          COMMITS_SINCE_TAG=$(git log ${REF_TAG}..HEAD --pretty=format:"%s" --no-merges)
+          
+          if [ -z "$COMMITS_SINCE_TAG" ]; then
+            echo "No new commits since last tag, skipping beta release"
+            exit 0
+          fi
+          
+          # Check if there are any version-bump commits (feat, fix, perf, refactor, BREAKING)
+          VERSION_BUMP_COMMITS=$(git log ${REF_TAG}..HEAD --pretty=format:"%s" --no-merges | grep -E "^(feat|fix|perf|refactor|BREAKING)" || true)
+          
+          if [ -z "$VERSION_BUMP_COMMITS" ]; then
+            echo "No version-bump commits found, skipping beta release"
+            exit 0
+          fi
+          
+          # Create beta prerelease (will create tag like v0.2.4-beta.1)
+          bun run release -- --prerelease beta --skip.changelog=false
+          
+          NEW_TAG=$(git describe --tags --abbrev=0)
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Push changes and tags
+        if: steps.release.outputs.tag != ''
+        run: |
+          git push --follow-tags origin develop
+
+      - name: Publish to GitHub Packages (beta)
+        if: steps.release.outputs.tag != ''
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "@bitrockteam:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          npm publish --tag beta
+
