@@ -5,11 +5,11 @@ on:
     branches:
       - main
     paths-ignore:
-      - '**.md'
-      - '.gitignore'
-      - '.versionrc.json'
-      - 'VERSIONING_STRATEGY.md'
-      - 'RELEASE_GUIDE.md'
+      - "**.md"
+      - ".gitignore"
+      - ".versionrc.json"
+      - "VERSIONING_STRATEGY.md"
+      - "RELEASE_GUIDE.md"
 
 permissions:
   contents: write
@@ -19,7 +19,7 @@ jobs:
   release:
     name: Create Production Release
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,6 +31,13 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@bitrockteam"
 
       - name: Configure Git
         run: |
@@ -52,7 +59,7 @@ jobs:
           # Get latest production tag (excluding beta tags)
           git fetch --tags
           LATEST_PROD_TAG=$(git tag -l "v*" --exclude="*beta*" | sort -V | tail -1 || echo "")
-          
+
           if [ -z "$LATEST_PROD_TAG" ]; then
             echo "No previous production tag found, creating first release"
             bun run release:first
@@ -76,7 +83,7 @@ jobs:
             # Create production release (no prerelease flag, auto-determines version bump)
             bun run release
           fi
-          
+
           NEW_TAG=$(git describe --tags --abbrev=0)
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
         continue-on-error: true
@@ -103,7 +110,24 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "@bitrockteam:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
-          npm publish --tag latest
+          # Verify package.json version matches the tag
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION=$(echo "${{ steps.release.outputs.tag }}" | sed 's/^v//')
 
+          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+            echo "Error: package.json version ($PACKAGE_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+          # Attempt to publish with better error handling
+          npm publish --tag latest || {
+            echo "Publish failed. Checking if version already exists..."
+            # If publish fails, check if it's because the version already exists
+            npm view @bitrockteam/sonarflow@$PACKAGE_VERSION && {
+              echo "Version $PACKAGE_VERSION already exists in registry, skipping publish"
+              exit 0
+            } || {
+              echo "Publish failed for unknown reason"
+              exit 1
+            }
+          }

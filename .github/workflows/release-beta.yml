@@ -32,6 +32,13 @@ jobs:
         with:
           bun-version: 1.3.1
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@bitrockteam'
+
       - name: Configure Git
         run: |
           git config --global user.name "github-actions[bot]"
@@ -98,7 +105,25 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "@bitrockteam:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
-          npm publish --tag beta
+          # Verify package.json version matches the tag
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION=$(echo "${{ steps.release.outputs.tag }}" | sed 's/^v//')
+          
+          if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+            echo "Error: package.json version ($PACKAGE_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+          
+          # Attempt to publish with better error handling
+          npm publish --tag beta || {
+            echo "Publish failed. Checking if version already exists..."
+            # If publish fails, check if it's because the version already exists
+            npm view @bitrockteam/sonarflow@$PACKAGE_VERSION && {
+              echo "Version $PACKAGE_VERSION already exists in registry, skipping publish"
+              exit 0
+            } || {
+              echo "Publish failed for unknown reason"
+              exit 1
+            }
+          }
 
