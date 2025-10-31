@@ -1,12 +1,12 @@
+import { execSync } from "node:child_process";
 import chalk from "chalk";
 import dotenv from "dotenv";
-import { execSync } from "node:child_process";
-import { SonarUrlBuilder } from "./sonar-url-builder.js";
 import {
-  extractPrNumberFromBranch,
-  buildGitHubPrApiUrl,
   buildBitbucketPrApiUrl,
+  buildGitHubPrApiUrl,
+  extractPrNumberFromBranch,
 } from "./pr-detection-utils.js";
+import { SonarUrlBuilder } from "./sonar-url-builder.js";
 
 dotenv.config();
 

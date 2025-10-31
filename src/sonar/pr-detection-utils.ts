@@ -6,7 +6,8 @@ import chalk from "chalk";
  * - pr/123, PR/123, pull/123, PULL/123
  * - feat/feature-123, feature/123, fix/123, bugfix/123
  */
-const PR_NUMBER_REGEX = /(?:pr\/|PR\/|pull\/|PULL\/)(\d+)|(?:feat\/|feature\/|fix\/|bugfix\/).*?(\d+)/i;
+const PR_NUMBER_REGEX =
+  /(?:pr\/|PR\/|pull\/|PULL\/)(\d+)|(?:feat\/|feature\/|fix\/|bugfix\/).*?(\d+)/i;
 
 /**
  * Extracts PR number from a branch name using regex pattern matching
@@ -60,4 +61,3 @@ export const buildBitbucketPrApiUrl = (
 ): string => {
   return `${baseUrl}/${organization}/${repoName}/pullrequests?q=source.branch.name="${branch}"`;
 };
-

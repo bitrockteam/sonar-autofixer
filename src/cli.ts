@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readFileSync } from "node:fs";
 import chalk from "chalk";
+import { Command } from "commander";
 import dotenv from "dotenv";
+
 dotenv.config();
 
 // ESM-compatible __dirname/__filename
