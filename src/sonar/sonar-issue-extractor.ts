@@ -71,10 +71,9 @@ export class SonarIssueExtractor {
 
     this.githubOwner = process.env.GITHUB_OWNER;
     this.githubRepo = process.env.GITHUB_REPO;
-    this.githubBaseUrl = process.env.GITHUB_API_URL || "https://api.github.com";
+    this.githubBaseUrl = "https://api.github.com";
 
-    this.bitbucketBaseUrl =
-      process.env.BITBUCKET_BASE_URL || "https://api.bitbucket.org/2.0/repositories";
+    this.bitbucketBaseUrl = "https://api.bitbucket.org/2.0/repositories";
 
     // SonarQube configuration
     this.sonarToken = process.env.SONAR_TOKEN;
@@ -113,7 +112,6 @@ export class SonarIssueExtractor {
     };
   }
 
-
   /**
    * Detects GitHub PR ID from branch name
    * @param branch - Branch name
@@ -129,7 +127,13 @@ export class SonarIssueExtractor {
       console.log(chalk.blue(`🔍 Checking for PR associated with branch: ${branch}`));
 
       // Try to get PR number from GitHub API using the branch name (open PRs first)
-      const openPrUrl = buildGitHubPrApiUrl(this.githubBaseUrl, this.githubOwner, this.githubRepo, branch, "open");
+      const openPrUrl = buildGitHubPrApiUrl(
+        this.githubBaseUrl,
+        this.githubOwner,
+        this.githubRepo,
+        branch,
+        "open"
+      );
       const openResponse = await fetch(openPrUrl, {
         headers: {
           Authorization: `token ${this.gitToken}`,
@@ -323,7 +327,6 @@ export class SonarIssueExtractor {
     if (logMessage) {
       console.log(chalk.blue(logMessage));
     }
-    console.log(chalk.blue(`Fetching issues from: ${url.replace(/sonarToken=[^&]+/, "sonarToken=***")}`));
 
     const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
     const response = await fetch(url, {
@@ -355,7 +358,11 @@ export class SonarIssueExtractor {
    */
   async fetchIssuesForPr(prLink: string, config: Config): Promise<SonarResponse> {
     const prKey = this.extractPrKeyFromLink(prLink);
-    return await this.fetchIssues(config, { pullRequest: prKey }, `Fetching issues from PR: ${prLink}`);
+    return await this.fetchIssues(
+      config,
+      { pullRequest: prKey },
+      `Fetching issues from PR: ${prLink}`
+    );
   }
 
   /**
@@ -370,5 +377,136 @@ export class SonarIssueExtractor {
       { pullRequest: prId },
       `Fetching issues from PR ID: ${prId}`
     );
+  }
+
+  /**
+   * Builds the base URL for measures API endpoint
+   * @param baseUrl - SonarQube base URL
+   * @returns Normalized measures API URL
+   */
+  private buildMeasuresUrl(baseUrl: string): string {
+    let url = baseUrl;
+    if (!url.includes("/api/measures/component")) {
+      url = url.replace(/\/api\/issues\/search$/, "").replace(/\/$/, "");
+      url = `${url}/api/measures/component`;
+    }
+    return url;
+  }
+
+  /**
+   * Builds the base URL for hotspots API endpoint
+   * @param baseUrl - SonarQube base URL
+   * @returns Normalized hotspots API URL
+   */
+  private buildHotspotsUrl(baseUrl: string): string {
+    let url = baseUrl;
+    if (!url.includes("/api/hotspots/search")) {
+      url = url.replace(/\/api\/issues\/search$/, "").replace(/\/$/, "");
+      url = `${url}/api/hotspots/search`;
+    }
+    return url;
+  }
+
+  /**
+   * Fetches measures (duplications, coverage) for a PR or branch
+   * @param config - Configuration object
+   * @param options - URL building options (branch or pullRequest)
+   * @returns Measures data
+   */
+  async fetchMeasures(
+    config: Config,
+    options: { branch?: string; pullRequest?: string }
+  ): Promise<Record<string, unknown>> {
+    const baseUrl = SonarUrlBuilder.normalizeUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
+    const measuresUrl = this.buildMeasuresUrl(baseUrl);
+
+    // For measures API, use project key directly (not with organization prefix)
+    // This matches how SonarQube expects component keys for measures
+    const componentKey = config.sonarProjectKey || config.repoName;
+
+    const params = new URLSearchParams({
+      component: componentKey,
+      metricKeys: [
+        "duplicated_lines",
+        "duplicated_lines_density",
+        "duplicated_blocks",
+        "duplicated_files",
+        "new_duplicated_lines",
+        "new_duplicated_lines_density",
+        "new_duplicated_blocks",
+        "coverage",
+        "line_coverage",
+        "branch_coverage",
+        "new_coverage",
+        "new_line_coverage",
+        "new_branch_coverage",
+        "uncovered_lines",
+        "uncovered_conditions",
+        "new_uncovered_lines",
+        "new_uncovered_conditions",
+      ].join(","),
+    });
+
+    if (options.pullRequest) {
+      params.set("pullRequest", options.pullRequest);
+    } else if (options.branch) {
+      params.set("branch", options.branch);
+    }
+
+    const url = `${measuresUrl}?${params.toString()}`;
+
+    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
+    const response = await fetch(url, {
+      headers: {
+        ...authHeaders,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
+
+    return (await this.handleSonarResponse(response)) as Record<string, unknown>;
+  }
+
+  /**
+   * Fetches security hotspots for a PR or branch
+   * @param config - Configuration object
+   * @param options - URL building options (branch or pullRequest)
+   * @returns Security hotspots data
+   */
+  async fetchSecurityHotspots(
+    config: Config,
+    options: { branch?: string; pullRequest?: string }
+  ): Promise<Record<string, unknown>> {
+    const baseUrl = SonarUrlBuilder.normalizeUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
+    const hotspotsUrl = this.buildHotspotsUrl(baseUrl);
+
+    // For hotspots API, use project key directly (not with organization prefix)
+    // This matches how SonarQube expects project keys for hotspots
+    const projectKey = config.sonarProjectKey || config.repoName;
+
+    const params = new URLSearchParams({
+      projectKey: projectKey,
+      p: "1",
+      ps: "100",
+    });
+
+    if (options.pullRequest) {
+      params.set("pullRequest", options.pullRequest);
+    } else if (options.branch) {
+      params.set("branch", options.branch);
+    }
+
+    const url = `${hotspotsUrl}?${params.toString()}`;
+
+    const authHeaders = config.publicSonar ? {} : this.getSonarAuthHeaders(this.sonarToken);
+    const response = await fetch(url, {
+      headers: {
+        ...authHeaders,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
+
+    return (await this.handleSonarResponse(response)) as Record<string, unknown>;
   }
 }

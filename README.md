@@ -76,9 +76,6 @@ GIT_EMAIL=your-email@example.com        # Required for Bitbucket PR detection; o
 GITHUB_OWNER=your-username-or-org
 GITHUB_REPO=your-repo-name
 
-# Bitbucket (only if using Bitbucket)
-BITBUCKET_BASE_URL=https://api.bitbucket.org/2.0/repositories  # Optional, has sane default
-
 # SonarQube/SonarCloud Configuration
 SONAR_TOKEN=your-sonar-token            # Required for private Sonar; not needed if publicSonar=true
 SONAR_ORGANIZATION=your-organization    # For SonarCloud

@@ -58,7 +58,6 @@ export class SonarUrlBuilder {
       componentKeys: config.sonarComponentKeys,
       organization: config.sonarOrganization,
       component: config.gitOrganization ? `${config.gitOrganization}/${component}` : component,
-      timeZone: "Europe/Rome", // TODO: Make this configurable
     };
   }
 
