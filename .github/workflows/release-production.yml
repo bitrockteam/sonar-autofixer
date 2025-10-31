@@ -38,6 +38,8 @@ jobs:
           node-version: "22"
           registry-url: "https://npm.pkg.github.com"
           scope: "@bitrockteam"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
@@ -110,6 +112,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Ensure .npmrc is correctly configured for GitHub Packages
+          # The setup-node action should create this, but we verify/update it
+          echo "@bitrockteam:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          
           # Verify package.json version matches the tag
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           TAG_VERSION=$(echo "${{ steps.release.outputs.tag }}" | sed 's/^v//')
@@ -118,6 +125,10 @@ jobs:
             echo "Error: package.json version ($PACKAGE_VERSION) does not match tag ($TAG_VERSION)"
             exit 1
           fi
+
+          # Verify .npmrc configuration
+          echo "Verifying .npmrc configuration:"
+          cat .npmrc
 
           # Attempt to publish with better error handling
           npm publish --tag latest || {
