@@ -2,12 +2,12 @@
 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import chalk from "chalk";
-import fs from "fs-extra";
 import { input, select } from "@inquirer/prompts";
-import ora from "ora";
+import chalk from "chalk";
 import figlet from "figlet";
+import fs from "fs-extra";
 import gradient from "gradient-string";
+import ora from "ora";
 
 const colors = ["#A4A5A7", "#C74600", "#EB640A", "#F2A65D"];
 const dynamicGradient = gradient(colors);
@@ -58,6 +58,14 @@ interface Config {
 
 const runInit = async (): Promise<void> => {
   console.log(dynamicGradient("Welcome to sonarflow setup!\n"));
+
+  // Load sonarflow package.json to get version for schema URL
+  const sonarflowPackageJsonPath = path.join(__dirname, "..", "package.json");
+  const sonarflowPackageJson = (await fs.readJson(sonarflowPackageJsonPath)) as {
+    version: string;
+  };
+  const schemaVersion = sonarflowPackageJson.version;
+  const schemaUrl = `https://raw.githubusercontent.com/bitrockteam/sonarflow/v${schemaVersion}/schemas/sonarflowrc.schema.json`;
 
   // Load package.json to derive sensible defaults
   const pkgPath = path.join(process.cwd(), "package.json");
@@ -211,7 +219,7 @@ const runInit = async (): Promise<void> => {
       },
     });
 
-    let sonarBaseUrl: string | undefined = undefined;
+    let sonarBaseUrl: string = defaultSonarQubeUri ?? "";
     if (sonarMode === "custom") {
       sonarBaseUrl = await input({
         message: "Sonar URL (base, e.g., https://sonar.mycompany.com):",
@@ -272,7 +280,8 @@ const runInit = async (): Promise<void> => {
   }
 
   // 1) Write configuration file .sonarflowrc.json
-  const config: Config = {
+  const config: Config & { $schema?: string } = {
+    $schema: schemaUrl,
     repoName: answers.repoName,
     gitProvider: answers.gitProvider,
     repositoryVisibility: answers.repositoryVisibility,
