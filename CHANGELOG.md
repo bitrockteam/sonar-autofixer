@@ -9,6 +9,19 @@ All notable changes to this project will be documented in this file. See [standa
 
 * release pipelines ([ec2e6e5](https://github.com/bitrockteam/sonarflow/commit/ec2e6e5c3d58f5aa43b06d147a0b661260703216))
 
+
+### Chores
+
+* **release:** 0.2.4-beta.0 ([053ec16](https://github.com/bitrockteam/sonarflow/commit/053ec1696ac69a3830ad4a6ad5ff175ea16986a4))
+* update schema $id to version 0.2.4-beta.0 ([4041d1a](https://github.com/bitrockteam/sonarflow/commit/4041d1ad21e0d89c99d2ccfa30f285885ab9fb81))
+
+### [0.2.4-beta.0](https://github.com/bitrockteam/sonarflow/compare/v0.2.3...v0.2.4-beta.0) (2025-10-31)
+
+
+### Bug Fixes
+
+* release pipelines ([ec2e6e5](https://github.com/bitrockteam/sonarflow/commit/ec2e6e5c3d58f5aa43b06d147a0b661260703216))
+
 ### 0.2.3 (2025-10-31)
 
 
