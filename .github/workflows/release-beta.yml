@@ -105,12 +105,12 @@ jobs:
       - name: Publish to GitHub Packages (beta)
         if: steps.release.outputs.tag != ''
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
         run: |
           # Ensure .npmrc is correctly configured for GitHub Packages
           # The setup-node action should create this, but we verify/update it
           echo "@bitrockteam:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.PACKAGE_TOKEN }}" >> .npmrc
 
           # Verify package.json version matches the tag
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
