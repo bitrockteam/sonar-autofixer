@@ -3,8 +3,10 @@
 /**
  * Updates the schema file's $id field with the current package version.
  * This script is called during the release process via standard-version hooks.
+ * Automatically commits the schema version change with a default message.
  */
 
+import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,6 +38,52 @@ try {
   writeFileSync(schemaPath, JSON.stringify(schema, null, 2) + "\n", "utf8");
 
   console.log(`✅ Updated schema $id: ${oldId} → ${schema.$id}`);
+
+  // Stage and commit the schema file
+  try {
+    const schemaRelativePath = "schemas/sonarflowrc.schema.json";
+    const commitMessage = `chore: update schema version to v${version}`;
+
+    // Stage the schema file
+    try {
+      execSync(`git add ${schemaRelativePath}`, {
+        cwd: rootDir,
+        stdio: "pipe",
+      });
+    } catch (addError) {
+      console.error("⚠️  Warning: Failed to stage schema file");
+      throw addError;
+    }
+
+    // Commit with the default message
+    try {
+      execSync(`git commit -m "${commitMessage}"`, {
+        cwd: rootDir,
+        stdio: "pipe",
+      });
+      console.log(`✅ Committed schema version update: ${commitMessage}`);
+    } catch (commitError) {
+      // execSync throws an Error with the command output in the message
+      const errorOutput = commitError instanceof Error ? commitError.message : String(commitError);
+
+      // Check if git commit failed because there are no changes
+      if (
+        errorOutput.includes("nothing to commit") ||
+        errorOutput.includes("no changes added to commit")
+      ) {
+        console.log("ℹ️  Schema version unchanged, skipping commit");
+      } else {
+        console.error("⚠️  Warning: Failed to commit schema version update:", errorOutput);
+        // Don't fail the entire process if commit fails
+      }
+    }
+  } catch (gitError) {
+    // For any other git errors, log but don't fail
+    console.error(
+      "⚠️  Warning: Git operation failed:",
+      gitError instanceof Error ? gitError.message : String(gitError)
+    );
+  }
 } catch (error) {
   console.error(
     "❌ Error updating schema version:",
