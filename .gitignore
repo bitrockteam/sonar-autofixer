@@ -9,3 +9,4 @@ build
 .pnpm-debug.log*
 
 .scannerwork
+.sonarflowrc.json
