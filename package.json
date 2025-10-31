@@ -1,6 +1,6 @@
 {
   "name": "@bitrockteam/sonarflow",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "dist/cli.js",
   "bin": {
@@ -18,7 +18,12 @@
     "init": "node dist/cli.js init",
     "fetch": "node dist/cli.js fetch",
     "sonar:fetch": "npx @bitrockteam/sonarflow fetch",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:patch": "standard-version --release-as patch",
+    "release:first": "standard-version --first-release"
   },
   "files": [
     "dist",
@@ -69,7 +74,8 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.10.7",
     "@typescript/native-preview": "^7.0.0-dev.20251029.1",
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "standard-version": "^9.5.0"
   },
   "type": "module",
   "engines": {

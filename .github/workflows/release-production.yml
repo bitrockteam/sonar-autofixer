@@ -1,0 +1,109 @@
+name: Production Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.versionrc.json'
+      - 'VERSIONING_STRATEGY.md'
+      - 'RELEASE_GUIDE.md'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Create Production Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.1
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build project
+        run: bun run build
+
+      - name: Run linting
+        run: bun run check
+
+      - name: Create production release
+        id: release
+        run: |
+          # Get latest production tag (excluding beta tags)
+          git fetch --tags
+          LATEST_PROD_TAG=$(git tag -l "v*" --exclude="*beta*" | sort -V | tail -1 || echo "")
+          
+          if [ -z "$LATEST_PROD_TAG" ]; then
+            echo "No previous production tag found, creating first release"
+            bun run release:first
+          else
+            # Check if there are any conventional commits since last production tag
+            COMMITS_SINCE_TAG=$(git log ${LATEST_PROD_TAG}..HEAD --pretty=format:"%s" --no-merges)
+            
+            if [ -z "$COMMITS_SINCE_TAG" ]; then
+              echo "No new commits since last production tag, skipping release"
+              exit 0
+            fi
+            
+            # Check if there are any version-bump commits (feat, fix, perf, refactor, BREAKING)
+            VERSION_BUMP_COMMITS=$(git log ${LATEST_PROD_TAG}..HEAD --pretty=format:"%s" --no-merges | grep -E "^(feat|fix|perf|refactor|BREAKING)" || true)
+            
+            if [ -z "$VERSION_BUMP_COMMITS" ]; then
+              echo "No version-bump commits found, skipping release"
+              exit 0
+            fi
+            
+            # Create production release (no prerelease flag, auto-determines version bump)
+            bun run release
+          fi
+          
+          NEW_TAG=$(git describe --tags --abbrev=0)
+          echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Push changes and tags
+        if: steps.release.outputs.tag != ''
+        run: |
+          git push --follow-tags origin main
+
+      - name: Create GitHub Release
+        if: steps.release.outputs.tag != ''
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: Release ${{ steps.release.outputs.tag }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to GitHub Packages (latest)
+        if: steps.release.outputs.tag != ''
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "@bitrockteam:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          npm publish --tag latest
+
