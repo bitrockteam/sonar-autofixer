@@ -100,11 +100,21 @@ const fetchSonarIssues = async (
 
     let issues: SonarIssuesResponse;
     let usedSource: string;
+    let fetchOptions: { branch?: string; pullRequest?: string } = {};
 
     if (sonarPrLink) {
       // If PR link is provided, fetch issues from that PR
       console.log(chalk.blue(`Using provided SonarQube PR link: ${sonarPrLink}`));
+      // Extract PR key from link
+      const prKeyMatch = sonarPrLink.match(/pullRequest=([^&]+)/);
+      const prKey = prKeyMatch ? prKeyMatch[1] : null;
+      if (!prKey) {
+        throw new Error(
+          "Invalid SonarQube PR link format. Expected format: https://sonarcloud.io/project/issues?id=project&pullRequest=PR_KEY"
+        );
+      }
       issues = await extractor.fetchIssuesForPr(sonarPrLink, config);
+      fetchOptions = { pullRequest: prKey };
       usedSource = `PR: ${sonarPrLink}`;
     } else {
       // Try to automatically detect PR ID from current branch
@@ -119,11 +129,13 @@ const fetchSonarIssues = async (
         // Use detected PR ID
         console.log(chalk.green(`🚀 Using automatically detected PR ID: ${detectedPrId}`));
         issues = await extractor.fetchIssuesForPrId(detectedPrId, config);
+        fetchOptions = { pullRequest: detectedPrId };
         usedSource = `PR #${detectedPrId} (auto-detected from branch: ${currentBranch})`;
       } else {
         // Fallback to branch-based approach
         console.warn(chalk.yellow("📋 No PR detected, falling back to branch-based approach"));
         issues = await extractor.fetchIssuesForBranch(currentBranch, config);
+        fetchOptions = { branch: currentBranch };
         usedSource = currentBranch;
 
         // Fallback to develop if no issues found
@@ -132,10 +144,26 @@ const fetchSonarIssues = async (
             chalk.yellow("No issues found for current branch. Falling back to branch: develop")
           );
           issues = await extractor.fetchIssuesForBranch("develop", config);
+          fetchOptions = { branch: "develop" };
           usedSource = "develop";
         }
       }
     }
+
+    // Extract duplications, coverage, and security issues
+    console.log(chalk.blue("📊 Fetching duplications, coverage, and security hotspots..."));
+    const [measures, securityHotspots] = await Promise.all([
+      extractor.fetchMeasures(config, fetchOptions).catch((error) => {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.warn(chalk.yellow(`⚠️  Failed to fetch measures: ${errorMessage}`));
+        return {};
+      }),
+      extractor.fetchSecurityHotspots(config, fetchOptions).catch((error) => {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.warn(chalk.yellow(`⚠️  Failed to fetch security hotspots: ${errorMessage}`));
+        return {};
+      }),
+    ]);
 
     // Save issues to file
     const outputPath = config.outputPath || ".sonar/";
@@ -146,6 +174,22 @@ const fetchSonarIssues = async (
 
     const issuesPath = path.join(sonarDir, "issues.json");
     fs.writeFileSync(issuesPath, JSON.stringify(issues, null, 2));
+
+    // Save measures (duplications and coverage) if available
+    if (measures && Object.keys(measures).length > 0) {
+      const measuresPath = path.join(sonarDir, "measures.json");
+      fs.writeFileSync(measuresPath, JSON.stringify(measures, null, 2));
+      console.log(chalk.blue(`📁 Saved measures to: ${measuresPath}`));
+    }
+
+    // Save security hotspots if available
+    if (securityHotspots && Object.keys(securityHotspots).length > 0) {
+      const hotspotsPath = path.join(sonarDir, "security-hotspots.json");
+      fs.writeFileSync(hotspotsPath, JSON.stringify(securityHotspots, null, 2));
+      const hotspotsCount =
+        (securityHotspots as { hotspots?: Array<unknown> }).hotspots?.length || 0;
+      console.log(chalk.blue(`📁 Saved ${hotspotsCount} security hotspot(s) to: ${hotspotsPath}`));
+    }
 
     console.log(
       chalk.green(
