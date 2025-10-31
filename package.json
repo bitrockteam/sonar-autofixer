@@ -61,6 +61,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.10.7",
     "@typescript/native-preview": "^7.0.0-dev.20251029.1"
   },
