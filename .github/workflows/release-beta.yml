@@ -5,11 +5,11 @@ on:
     branches:
       - develop
     paths-ignore:
-      - '**.md'
-      - '.gitignore'
-      - '.versionrc.json'
-      - 'VERSIONING_STRATEGY.md'
-      - 'RELEASE_GUIDE.md'
+      - "**.md"
+      - ".gitignore"
+      - ".versionrc.json"
+      - "VERSIONING_STRATEGY.md"
+      - "RELEASE_GUIDE.md"
 
 permissions:
   contents: write
@@ -19,7 +19,7 @@ jobs:
   release:
     name: Create Beta Release
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,9 +35,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@bitrockteam'
+          node-version: "22"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@bitrockteam"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
@@ -58,39 +60,39 @@ jobs:
         run: |
           # Check if there are any commits since last tag that warrant a release
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          
+
           # Get all tags to find latest beta tag
           git fetch --tags
           LATEST_BETA_TAG=$(git tag -l "*beta*" | sort -V | tail -1 || echo "")
           LATEST_PROD_TAG=$(git tag -l "v*" --exclude="*beta*" | sort -V | tail -1 || echo "")
-          
+
           # Use the latest tag (either beta or prod) as reference
           REF_TAG=${LATEST_BETA_TAG:-${LATEST_PROD_TAG:-${LAST_TAG}}}
-          
+
           if [ -z "$REF_TAG" ]; then
             echo "No previous tag found, skipping beta release"
             exit 0
           fi
-          
+
           # Check if there are any conventional commits since reference tag
           COMMITS_SINCE_TAG=$(git log ${REF_TAG}..HEAD --pretty=format:"%s" --no-merges)
-          
+
           if [ -z "$COMMITS_SINCE_TAG" ]; then
             echo "No new commits since last tag, skipping beta release"
             exit 0
           fi
-          
+
           # Check if there are any version-bump commits (feat, fix, perf, refactor, BREAKING)
           VERSION_BUMP_COMMITS=$(git log ${REF_TAG}..HEAD --pretty=format:"%s" --no-merges | grep -E "^(feat|fix|perf|refactor|BREAKING)" || true)
-          
+
           if [ -z "$VERSION_BUMP_COMMITS" ]; then
             echo "No version-bump commits found, skipping beta release"
             exit 0
           fi
-          
+
           # Create beta prerelease (will create tag like v0.2.4-beta.1)
           bun run release -- --prerelease beta --skip.changelog=false
-          
+
           NEW_TAG=$(git describe --tags --abbrev=0)
           echo "tag=$NEW_TAG" >> $GITHUB_OUTPUT
         continue-on-error: true
@@ -105,15 +107,24 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Ensure .npmrc is correctly configured for GitHub Packages
+          # The setup-node action should create this, but we verify/update it
+          echo "@bitrockteam:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
           # Verify package.json version matches the tag
           PACKAGE_VERSION=$(node -p "require('./package.json').version")
           TAG_VERSION=$(echo "${{ steps.release.outputs.tag }}" | sed 's/^v//')
-          
+
           if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
             echo "Error: package.json version ($PACKAGE_VERSION) does not match tag ($TAG_VERSION)"
             exit 1
           fi
-          
+
+          # Verify .npmrc configuration
+          echo "Verifying .npmrc configuration:"
+          cat .npmrc
+
           # Attempt to publish with better error handling
           npm publish --tag beta || {
             echo "Publish failed. Checking if version already exists..."
@@ -126,4 +137,3 @@ jobs:
               exit 1
             }
           }
-
