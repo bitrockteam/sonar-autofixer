@@ -7,6 +7,15 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Chores
 
+* **release:** 0.2.4-beta.2 ([f1fa4cb](https://github.com/bitrockteam/sonarflow/commit/f1fa4cbe6a1099bfd56231e72e1cf8458b965313))
+* update release workflows to use PACKAGE_TOKEN for GitHub Packages authentication ([dd560a1](https://github.com/bitrockteam/sonarflow/commit/dd560a1441e2fc74dc46db1e447677c6b108147b))
+* update schema version to v0.2.4-beta.2 ([92f3f39](https://github.com/bitrockteam/sonarflow/commit/92f3f3927eed71a796ff6a4b14bb9827af820acd))
+
+### [0.2.4-beta.2](https://github.com/bitrockteam/sonarflow/compare/v0.2.4-beta.1...v0.2.4-beta.2) (2025-10-31)
+
+
+### Chores
+
 * **release:** 0.2.4-beta.1 ([17922c7](https://github.com/bitrockteam/sonarflow/commit/17922c7875bb6b54d65e5f4bcd6e6dd6e3e3328e))
 * update release workflows to use PACKAGE_TOKEN for GitHub Packages authentication ([dd560a1](https://github.com/bitrockteam/sonarflow/commit/dd560a1441e2fc74dc46db1e447677c6b108147b))
 * update schema version to v0.2.4-beta.2 ([92f3f39](https://github.com/bitrockteam/sonarflow/commit/92f3f3927eed71a796ff6a4b14bb9827af820acd))
