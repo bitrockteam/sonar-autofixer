@@ -19,6 +19,9 @@ interface PackageJson {
   name?: string;
   private?: boolean;
   scripts?: Record<string, string>;
+  repository?: {
+    url?: string;
+  };
   [key: string]: unknown;
 }
 
@@ -77,8 +80,51 @@ const runInit = async (): Promise<void> => {
     typeof pkg.name === "string" && pkg.name.trim()
       ? pkg.name.trim()
       : path.basename(process.cwd());
+  const defaultGitProvider = pkg.repository?.url?.includes("bitbucket") ? "bitbucket" : "github";
   const defaultVisibility = pkg.private === true ? "private" : "public";
-  // no default for legacy @org/repo; we use simple repo name as base for project key
+  const defaultGitOrganization = defaultRepoName.includes("@")
+    ? defaultRepoName.split("/")[0]
+    : undefined;
+
+  const autoDetectAiEditor = () => {
+    if (fs.pathExistsSync(path.join(process.cwd(), ".cursor"))) {
+      return "cursor";
+    }
+    if (fs.pathExistsSync(path.join(process.cwd(), ".vscode"))) {
+      return "copilot (vscode)";
+    }
+    if (fs.pathExistsSync(path.join(process.cwd(), ".windsurf"))) {
+      return "windsurf";
+    }
+    return "other";
+  };
+  const defaultAiEditor = autoDetectAiEditor();
+
+  const autoDetectSonarModeAndProjectKey = () => {
+    const connectedModePath = path.join(process.cwd(), ".sonarlint/connectedMode.json");
+    if (fs.pathExistsSync(connectedModePath)) {
+      const connectedMode = JSON.parse(fs.readFileSync(connectedModePath as string, "utf8"));
+      return {
+        sonarMode: connectedMode.sonarQubeUri ? "custom" : "standard",
+        sonarQubeUri: connectedMode.sonarQubeUri,
+        sonarProjectKey: connectedMode.projectKey,
+      };
+    }
+    return {
+      sonarMode: "custom",
+      sonarQubeUri: undefined,
+      sonarProjectKey: "",
+    };
+  };
+  const {
+    sonarMode: defaultSonarMode,
+    sonarProjectKey: defaultSonarProjectKey,
+    sonarQubeUri: defaultSonarQubeUri,
+  } = autoDetectSonarModeAndProjectKey();
+
+  const defaultSonarOrganization = defaultRepoName.includes("@")
+    ? defaultRepoName.split("/")[0]
+    : undefined;
 
   let answers: InitAnswers;
   try {
@@ -93,7 +139,7 @@ const runInit = async (): Promise<void> => {
         { name: "github", value: "github" },
         { name: "bitbucket", value: "bitbucket" },
       ],
-      default: "github",
+      default: defaultGitProvider,
     });
 
     const repositoryVisibility = await select<"private" | "public">({
@@ -107,7 +153,7 @@ const runInit = async (): Promise<void> => {
 
     let gitOrganization = await input({
       message: "Repository organization:",
-      default: "",
+      default: defaultGitOrganization ?? "",
       validate: (val: string) => {
         const trimmed = (val ?? "").trim();
         if (gitProvider === "bitbucket" || repositoryVisibility === "private") {
@@ -126,7 +172,7 @@ const runInit = async (): Promise<void> => {
         { name: "windsurf", value: "windsurf" },
         { name: "other", value: "other" },
       ],
-      default: "cursor",
+      default: defaultAiEditor,
     });
 
     const sonarMode = await select<"standard" | "custom">({
@@ -135,12 +181,12 @@ const runInit = async (): Promise<void> => {
         { name: "standard (SonarCloud)", value: "standard" },
         { name: "custom (self-hosted SonarQube)", value: "custom" },
       ],
-      default: "standard",
+      default: defaultSonarMode,
     });
 
     let sonarOrganization: string | undefined = await input({
       message: "Sonar organization (required for standard mode):",
-      default: "",
+      default: defaultSonarOrganization ?? "",
       validate: (val: string) => {
         const trimmed = (val ?? "").trim();
         if (sonarMode === "standard") {
@@ -154,6 +200,7 @@ const runInit = async (): Promise<void> => {
     const sonarProjectKey = await input({
       message: "Sonar project key (project name):",
       default: (() => {
+        if (defaultSonarProjectKey) return defaultSonarProjectKey;
         const parts = defaultRepoName.split("/");
         const base = parts[parts.length - 1] || defaultRepoName;
         return base;
@@ -168,7 +215,7 @@ const runInit = async (): Promise<void> => {
     if (sonarMode === "custom") {
       sonarBaseUrl = await input({
         message: "Sonar URL (base, e.g., https://sonar.mycompany.com):",
-        default: "",
+        default: defaultSonarQubeUri,
         validate: (val: string) => {
           const trimmed = (val ?? "").trim();
           return /^https?:\/\//.test(trimmed)
