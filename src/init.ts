@@ -277,14 +277,21 @@ const runInit = async (): Promise<void> => {
     process.exit(1);
   }
 
-  // 3) Create rule file based on AI editor selection using src/templates/rule.md
+  // 3) Create rule file based on AI editor selection and rules flavor
   const ruleSpinner = ora({
     text: "Creating AI editor rule…",
     color: "yellow",
   }).start();
   try {
-    // Go up one level from dist to src, then to templates
-    const templateRulePath = path.join(__dirname, "../src/templates/rule.md");
+    // Resolve template by rules flavor
+    const flavor = answers.rulesFlavor;
+    const templateFilename =
+      flavor === "safe"
+        ? "rule-safe.md"
+        : flavor === "yolo"
+          ? "rule-yolo.md"
+          : "rule-vibe-coder.md";
+    const templateRulePath = path.join(__dirname, "../src/templates/", templateFilename);
     if (!(await fs.pathExists(templateRulePath))) {
       throw new Error(`Template rule not found at ${templateRulePath}`);
     }

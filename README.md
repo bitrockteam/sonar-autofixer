@@ -172,10 +172,10 @@ After initialization, you can use the added npm scripts:
 
 ```bash
 # Fetch issues
-npm run sonar:fetch
+sonar:fetch
 
 # Run local scan
-npm run sonar:scan
+sonar:scan
 ```
 
 ## Features
