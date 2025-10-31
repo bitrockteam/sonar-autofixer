@@ -4,6 +4,10 @@
   <img src="./public/logo.svg" alt="Sonarflow logo" width="128" />
 </p>
 
+<p align="center">
+  <a href="https://sonarflow-web.vercel.app/">🌐 Website</a>
+</p>
+
 CLI utility for fetching SonarQube issues and running local SonarQube scans. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis. Includes AI editor integration for automated issue fixing. Supports GitHub and Bitbucket.
 
 ## Installation
