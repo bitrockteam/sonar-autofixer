@@ -20,7 +20,12 @@
     "sonar:fetch": "npx @bitrockteam/sonarflow fetch",
     "prepare": "husky"
   },
-  "files": ["dist", "src/templates", "README.md", "package.json"],
+  "files": [
+    "dist",
+    "src/templates",
+    "README.md",
+    "package.json"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bitrockteam/sonarflow.git"
