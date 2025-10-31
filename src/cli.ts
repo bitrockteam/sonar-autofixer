@@ -80,7 +80,6 @@ const checkForUpdates = async (): Promise<void> => {
     console.log(chalk.blue("\nCommon commands with latest:"));
     console.log(chalk.blue(`- npx ${packageName}@latest init`));
     console.log(chalk.blue(`- npx ${packageName}@latest fetch`));
-    console.log(chalk.blue(`- npx ${packageName}@latest scan`));
     console.log(chalk.blue(`- npx ${packageName}@latest update`));
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -125,15 +124,6 @@ program
   .allowExcessArguments(true)
   .action(() => {
     runNodeScript("./versioning/index.js", process.argv.slice(3));
-    showUpdateReminder();
-  });
-
-program
-  .command("scan")
-  .description("Run local Sonar scanner and save report")
-  .allowExcessArguments(true)
-  .action(() => {
-    runNodeScript("./sonar/scanner.js", process.argv.slice(3));
     showUpdateReminder();
   });
 

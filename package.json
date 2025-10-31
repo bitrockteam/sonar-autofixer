@@ -16,19 +16,11 @@
     "check:fix": "biome check --write src",
     "prepublishOnly": "echo 'Publishing @bitrockteam/sonarflow...' && bun run build",
     "init": "node dist/cli.js init",
-    "scan": "node dist/cli.js scan",
     "fetch": "node dist/cli.js fetch",
-    "sonar:scan": "npx @bitrockteam/sonarflow scan",
     "sonar:fetch": "npx @bitrockteam/sonarflow fetch",
     "prepare": "husky"
   },
-  "files": [
-    "dist",
-    "src/templates",
-    "README.md",
-    "package.json",
-    ".vscode/icon-theme.json"
-  ],
+  "files": ["dist", "src/templates", "README.md", "package.json", ".vscode/icon-theme.json"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bitrockteam/sonarflow.git"

@@ -117,7 +117,7 @@ To use this CLI you’ll need tokens for your Git provider and, when scanning pr
   - **Guide**: [Bitbucket Cloud — App passwords](https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/)
 
 - **Sonar Token**
-  - Required only when scanning/fetching from private SonarQube/SonarCloud projects or when `.sonarflowrc.json` does not set `"publicSonar": true`.
+  - Required only when fetching from private SonarQube/SonarCloud projects or when `.sonarflowrc.json` does not set `"publicSonar": true`.
   - **Scope**: Standard user token (no special permissions typically needed beyond access to the project)
   - **Guides**:
     - SonarCloud: [Generating and using tokens](https://docs.sonarcloud.io/advanced-setup/user-accounts/generating-and-using-tokens/)
@@ -145,17 +145,6 @@ npx @bitrockteam/sonarflow fetch my-branch https://sonarcloud.io/project/issues?
 - Auto PR detection tries provider API first (GitHub or Bitbucket), then falls back to extracting from branch naming patterns.
 - Issues are saved to `.sonar/issues.json`.
 
-#### Run Local SonarQube Scan
-
-```bash
-# Run local SonarQube scan
-npx @bitrockteam/sonarflow scan
-```
-
-- Requires `@sonar/scan` installed globally.
-- Results are saved to `.sonar/scanner-report.json`.
-- If `publicSonar` is true in `.sonarflowrc.json`, `SONAR_TOKEN` is not required.
-
 #### Initialize Configuration
 
 ```bash
@@ -177,9 +166,6 @@ After initialization, you can use the added npm scripts:
 ```bash
 # Fetch issues
 sonar:fetch
-
-# Run local scan
-sonar:scan
 ```
 
 ## Features
@@ -187,7 +173,6 @@ sonar:scan
 - **Automatic PR Detection**: Detects PR IDs from your current git branch using GitHub or Bitbucket APIs
 - **Fallback Support**: Falls back to branch-based extraction if PR detection fails
 - **PR Link Support**: Fetch issues directly using a SonarQube PR link
-- **Local Scanning**: Run SonarQube scans locally and save results
 - **AI Editor Integration**: Creates rules for Cursor, VSCode, Windsurf for automated issue fixing
 - **Custom Icon Theme**: Installs a local theme under `.vscode/icon-theme/` and sets `workbench.iconTheme` so `.sonarflowrc.json` is visually distinguished in your workspace
 - **Issue Summary**: Displays a summary of issues by severity after fetching
@@ -204,7 +189,6 @@ sonar:scan
 - **Lint/Format**: Biome
 - **Lockfile**: Bun (for development reproducibility)
 - **APIs**: SonarQube/SonarCloud REST APIs, GitHub REST API, Bitbucket Cloud API
-- **Scanner**: `@sonar/scan` (local SonarQube scanner, installed globally)
 - **Editor Integrations**: Cursor, VSCode (Copilot), Windsurf rule templates
 
 ## Updating the CLI
@@ -228,13 +212,6 @@ npx @bitrockteam/sonarflow@latest <command>
 4. Saves issues to `.sonar/issues.json`
 5. Displays a summary of fetched issues
 
-### Scan Command
-
-1. Reads `.sonarflowrc.json` to determine if `publicSonar` is enabled
-2. Validates `SONAR_TOKEN` when required (private Sonar)
-3. Runs local SonarQube scanner
-4. Saves results to `.sonar/scanner-report.json`
-5. Provides detailed scan output
 
 ### Init Command
 
@@ -246,7 +223,6 @@ npx @bitrockteam/sonarflow@latest <command>
 ## Output Files
 
 - `.sonar/issues.json` - Fetched SonarQube issues in JSON format
-- `.sonar/scanner-report.json` - Local scan results
 - `.sonarflowrc.json` - Project configuration
 - `.cursor/rules/sonar-issue-fix.mdc` - Cursor AI rules (if selected)
 - `.vscode/sonar-issue-fix.md` - VSCode rules (if selected)
@@ -270,7 +246,6 @@ These rules provide patterns and priorities for fixing common SonarQube issues.
 - Git repository
 - Git provider token (`GIT_TOKEN`) and, for Bitbucket, `GIT_EMAIL`
 - SonarQube/SonarCloud access
-- SonarQube Scanner (for local scans): `npm install -g @sonar/scan`
 
 ## License
 
