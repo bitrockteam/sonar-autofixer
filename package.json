@@ -1,6 +1,6 @@
 {
   "name": "@bitrockteam/sonarflow",
-  "version": "0.2.4-beta.2",
+  "version": "0.3.0-beta.3",
   "description": "CLI utility for fetching SonarQube issues and integrating with Bitbucket/GitHub PR workflows",
   "main": "dist/cli.js",
   "bin": {
@@ -17,6 +17,7 @@
     "prepublishOnly": "echo 'Publishing @bitrockteam/sonarflow...' && bun run build",
     "init": "node dist/cli.js init",
     "fetch": "node dist/cli.js fetch",
+    "mcp": "node dist/cli.js mcp",
     "sonar:fetch": "npx @bitrockteam/sonarflow fetch",
     "prepare": "husky",
     "release": "standard-version",
@@ -28,6 +29,7 @@
   "files": [
     "dist",
     "src/templates",
+    "src/prompts",
     "schemas",
     "README.md",
     "package.json"
@@ -61,13 +63,15 @@
   "homepage": "https://github.com/bitrockteam/sonarflow#readme",
   "dependencies": {
     "@inquirer/prompts": "^7.9.0",
+    "@modelcontextprotocol/sdk": "^1.20.2",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "dotenv": "^17.2.3",
     "figlet": "^1.9.3",
     "fs-extra": "^11.3.2",
     "gradient-string": "^3.0.0",
-    "ora": "^9.0.0"
+    "ora": "^9.0.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.2",

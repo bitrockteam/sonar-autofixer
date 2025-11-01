@@ -4,7 +4,9 @@
   <img src="./public/logo.svg" alt="Sonarflow logo" width="128" />
 </p>
 
-[Official Website](https://sonarflow-web.vercel.app/)
+<p align="center">
+  <a href="https://sonarflow.vercel.app/">🌐 Website</a>
+</p>
 
 CLI utility for fetching SonarQube issues and running local SonarQube scans. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis. Includes AI editor integration for automated issue fixing. Supports GitHub and Bitbucket.
 
@@ -234,6 +236,83 @@ The tool creates specific rules for your chosen AI editor to help with automated
 - **Other**: Creates `.rules/sonar-issue-fix.md`
 
 These rules provide patterns and priorities for fixing common SonarQube issues.
+
+## MCP Server (Model Context Protocol)
+
+Sonarflow includes an MCP server that provides SonarQube and Bitbucket tools to AI assistants like Cursor, Claude Desktop, and other MCP-compatible clients.
+
+<p align="center">
+  <a href="#configuration">
+    <img src="https://img.shields.io/badge/Add_to_Cursor-MCP_Server-blue?style=for-the-badge&logo=cursor&logoColor=white" alt="Add to Cursor" />
+  </a>
+</p>
+
+### Installation for MCP
+
+The MCP server is included when you install the package. You can use it with `npx` or `bunx`:
+
+```bash
+# Using npx
+npx @bitrockteam/sonarflow mcp
+
+# Using bunx
+bunx @bitrockteam/sonarflow mcp
+```
+
+### Configuration {#configuration}
+
+Add the MCP server to your MCP client configuration. For Cursor, create or update `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "sonarflow": {
+      "command": "npx",
+      "args": ["@bitrockteam/sonarflow", "mcp"]
+    }
+  }
+}
+```
+
+Or if you have the package installed locally or globally:
+
+```json
+{
+  "mcpServers": {
+    "sonarflow": {
+      "command": "sonarflow",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+### Available Tools
+
+The MCP server provides the following tools:
+
+- **`bitbucket.getRepoInfo`**: Fetches repository metadata from Bitbucket REST API
+  - Parameters: `owner`, `repo`, `token` (optional), `email` (optional)
+
+- **`sonar.getQualityGateStatus`**: Fetches quality gate status from SonarQube API
+  - Parameters: `projectKey`, `sonarToken` (optional), `sonarBaseUrl` (optional)
+
+### Available Prompts
+
+- **`code_review`**: Expert code review prompt focused on code quality, bugs, and best practices
+  - Parameters: `code`
+
+- **`security_scan`**: Security expert prompt for scanning code for vulnerabilities and security issues
+  - Parameters: `code`
+
+### Usage
+
+Once configured, your AI assistant can use these tools and prompts directly. For example:
+
+- "Check the quality gate status for project XYZ"
+- "Get repository info for workspace/repo"
+- "Review this code for quality issues"
+- "Scan this code for security vulnerabilities"
 
 ## Requirements
 

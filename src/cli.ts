@@ -135,4 +135,11 @@ program
     await checkForUpdates();
   });
 
+program
+  .command("mcp")
+  .description("Run MCP server in stdio mode")
+  .action(() => {
+    runNodeScript("./mcp/server.js", []);
+  });
+
 program.parse(process.argv);
