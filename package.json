@@ -70,7 +70,8 @@
     "figlet": "^1.9.3",
     "fs-extra": "^11.3.2",
     "gradient-string": "^3.0.0",
-    "ora": "^9.0.0"
+    "ora": "^9.0.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.2",
