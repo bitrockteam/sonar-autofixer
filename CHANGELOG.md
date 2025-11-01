@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0-beta.0](https://github.com/bitrockteam/sonarflow/compare/v0.2.4-beta.3...v0.3.0-beta.0) (2025-11-01)
+
+
+### Features
+
+* add MCP server command and integrate Bitbucket and SonarQube tools ([d6038d4](https://github.com/bitrockteam/sonarflow/commit/d6038d44fee1367d76019e3c800f96b19ec6956a))
+* add Zod dependency and enhance MCP server documentation ([00f98ee](https://github.com/bitrockteam/sonarflow/commit/00f98eedfb8e8b643bced5014f75dc22316317b0))
+
+
+### Chores
+
+* update schema version to v0.3.0-beta.0 ([3f93648](https://github.com/bitrockteam/sonarflow/commit/3f93648befbc2128363f90bea31c75b0b3c6fbab))
+
 ### [0.2.4-beta.2](https://github.com/bitrockteam/sonarflow/compare/v0.2.4-beta.1...v0.2.4-beta.2) (2025-10-31)
 
 
