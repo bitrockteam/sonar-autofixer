@@ -241,6 +241,12 @@ These rules provide patterns and priorities for fixing common SonarQube issues.
 
 Sonarflow includes an MCP server that provides SonarQube and Bitbucket tools to AI assistants like Cursor, Claude Desktop, and other MCP-compatible clients.
 
+<p align="center">
+  <a href="#configuration">
+    <img src="https://img.shields.io/badge/Add_to_Cursor-MCP_Server-blue?style=for-the-badge&logo=cursor&logoColor=white" alt="Add to Cursor" />
+  </a>
+</p>
+
 ### Installation for MCP
 
 The MCP server is included when you install the package. You can use it with `npx` or `bunx`:
@@ -253,7 +259,7 @@ npx @bitrockteam/sonarflow mcp
 bunx @bitrockteam/sonarflow mcp
 ```
 
-### Configuration
+### Configuration {#configuration}
 
 Add the MCP server to your MCP client configuration. For Cursor, create or update `.cursor/mcp.json`:
 
