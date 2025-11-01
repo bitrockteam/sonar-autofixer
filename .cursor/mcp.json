@@ -6,6 +6,10 @@
     },
     "SonarQube WebApi Documentation": {
       "url": "https://docs.sonarsource.com/sonarqube-server/~gitbook/mcp"
+    },
+    "sonarflow": {
+      "command": "node",
+      "args": ["/Users/davideghiotto/Desktop/bitrock/sonarflow/dist/cli.js", "mcp"]
     }
   }
 }

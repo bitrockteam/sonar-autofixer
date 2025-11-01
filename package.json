@@ -17,6 +17,7 @@
     "prepublishOnly": "echo 'Publishing @bitrockteam/sonarflow...' && bun run build",
     "init": "node dist/cli.js init",
     "fetch": "node dist/cli.js fetch",
+    "mcp": "node dist/cli.js mcp",
     "sonar:fetch": "npx @bitrockteam/sonarflow fetch",
     "prepare": "husky",
     "release": "standard-version",
@@ -28,6 +29,7 @@
   "files": [
     "dist",
     "src/templates",
+    "src/prompts",
     "schemas",
     "README.md",
     "package.json"
@@ -61,6 +63,7 @@
   "homepage": "https://github.com/bitrockteam/sonarflow#readme",
   "dependencies": {
     "@inquirer/prompts": "^7.9.0",
+    "@modelcontextprotocol/sdk": "^1.20.2",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
     "dotenv": "^17.2.3",
