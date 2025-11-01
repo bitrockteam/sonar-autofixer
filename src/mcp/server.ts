@@ -226,16 +226,3 @@ try {
   console.error(`Failed to start MCP server: ${errorMessage}`);
   process.exit(1);
 }
-
-process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled rejection:", reason);
-  process.exit(1);
-});
-
-try {
-  await server.connect(transport);
-} catch (error) {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  console.error(`Failed to start MCP server: ${errorMessage}`);
-  process.exit(1);
-}

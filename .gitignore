@@ -10,3 +10,5 @@ build
 
 .scannerwork
 .sonarflowrc.json
+
+.cursor/mcp.json
