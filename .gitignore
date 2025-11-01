@@ -9,6 +9,6 @@ build
 .pnpm-debug.log*
 
 .scannerwork
-.sonarflowrc.json
 
 .cursor/mcp.json
+.sonarflowrc.json
