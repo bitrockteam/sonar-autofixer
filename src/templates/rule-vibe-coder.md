@@ -1,4 +1,4 @@
-# sonar-issue-fix (VIBE-CODER)
+# sonarflow-autofix (VIBE-CODER)
 
 Standard operating procedure for fixing Sonar issues in this repo.
 
@@ -6,7 +6,7 @@ Fetching issues:
 
 - Do not auto-run commands. When issues are needed, ask the user to run:
   - `sonar:fetch`
-- Issues will be available at `.sonar/issues.json` after the user runs the command.
+- Issues will be available at `.sonarflow/issues.json` after the user runs the command.
 
 When asked to fix Sonar issues:
 
@@ -14,7 +14,7 @@ When asked to fix Sonar issues:
 - Only touch code related to the issue; avoid broad refactors.
 - Prefer early returns and readable control flow; remove nested ternaries.
 - Maintain or improve types; avoid `any`, avoid non-null assertions unless truly required.
-- Issues are found in `.sonar/issues.json`.
+- Issues are found in `.sonarflow/issues.json`.
 
 Patterns:
 

@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { execSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { SonarIssueExtractor } from "../sonar/sonar-issue-extractor.js";
 import { getRepoInfo } from "./tools/bitbucket.js";
 import { getQualityGateStatus } from "./tools/sonar.js";
 
@@ -191,6 +193,116 @@ server.prompt(
         },
       ],
     };
+  }
+);
+
+// Register sonar autofix prompt
+const sonarAutofixPromptContent = loadPrompt("sonar_autofix");
+server.prompt(
+  "sonar_autofix",
+  "Automatically fix SonarQube issues for the current branch using autofix rules",
+  {
+    workspacePath: z
+      .string()
+      .optional()
+      .describe("Optional workspace path (defaults to current working directory)"),
+    branch: z.string().optional().describe("Optional branch name (defaults to current git branch)"),
+  },
+  async (args) => {
+    try {
+      const workspacePath = args.workspacePath || process.cwd();
+      const configPath = path.join(workspacePath, ".sonarflowrc.json");
+
+      // Load configuration
+      if (!existsSync(configPath)) {
+        throw new Error(`Configuration file not found: .sonarflowrc.json at ${configPath}`);
+      }
+
+      const config = JSON.parse(readFileSync(configPath, "utf8")) as {
+        repoName: string;
+        gitOrganization: string;
+        sonarProjectKey: string;
+        sonarBaseUrl?: string;
+        publicSonar?: boolean;
+        gitProvider?: "github" | "bitbucket";
+        sonarOrganization?: string;
+        sonarMode?: "standard" | "custom";
+        outputPath?: string;
+        [key: string]: unknown;
+      };
+
+      // Get current branch
+      let currentBranch = args.branch;
+      if (!currentBranch) {
+        try {
+          currentBranch = execSync("git branch --show-current", {
+            encoding: "utf8",
+            cwd: workspacePath,
+          }).trim();
+        } catch {
+          throw new Error("Could not determine current git branch");
+        }
+      }
+
+      // Initialize SonarQube extractor and fetch issues
+      const extractor = new SonarIssueExtractor();
+      const issues = await extractor.fetchIssuesForBranch(currentBranch, config);
+
+      // Read autofix rules file
+      const autofixRulesPath = path.join(
+        workspacePath,
+        ".cursor",
+        "rules",
+        "sonarflow-autofix.mdc"
+      );
+      let autofixRules = "";
+      if (existsSync(autofixRulesPath)) {
+        autofixRules = readFileSync(autofixRulesPath, "utf-8");
+      } else {
+        autofixRules = `Warning: Autofix rules file not found at ${autofixRulesPath}. Please ensure the file exists.`;
+      }
+
+      // Combine everything in the prompt message
+      const issuesJson = JSON.stringify(issues, null, 2);
+      const promptText = `${sonarAutofixPromptContent}
+
+## Autofix Rules:
+${autofixRules}
+
+## Current Branch:
+${currentBranch}
+
+## SonarQube Issues:
+${issuesJson}
+
+Please analyze the SonarQube issues above and apply fixes according to the autofix rules provided. Focus on fixing issues one by one, following the priority order and patterns specified in the rules.`;
+
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: promptText,
+            },
+          },
+        ],
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        messages: [
+          {
+            role: "user",
+            content: {
+              type: "text",
+              text: `Error setting up sonar autofix prompt: ${errorMessage}`,
+            },
+          },
+        ],
+        isError: true,
+      };
+    }
   }
 );
 

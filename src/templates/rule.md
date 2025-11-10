@@ -1,4 +1,4 @@
-# sonar-issue-fix
+# sonarflow-autofix
 
 Standard operating procedure for fixing SonarQube issues in this repo.
 
@@ -11,7 +11,7 @@ When asked to fix Sonar issues:
 - Only touch code related to the issue; avoid broad refactors.
 - Prefer early returns and readable control flow; remove nested ternaries.
 - Maintain or improve types; avoid `any`, avoid non-null assertions unless truly required.
-- Issues are found in ".sonar/issues.json"
+- Issues are found in `.sonarflow/issues.json`
 
 Patterns:
 

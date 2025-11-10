@@ -38,6 +38,7 @@ interface InitAnswers {
 
   aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
   rulesFlavor: "safe" | "vibe-coder" | "yolo";
+  rulePath: string;
 }
 
 interface Config {
@@ -54,6 +55,7 @@ interface Config {
 
   aiEditor: "cursor" | "copilot (vscode)" | "windsurf" | "other";
   rulesFlavor: "safe" | "vibe-coder" | "yolo";
+  rulePath: string;
 }
 
 const runInit = async (): Promise<void> => {
@@ -133,6 +135,21 @@ const runInit = async (): Promise<void> => {
   const defaultSonarOrganization = defaultRepoName.includes("@")
     ? defaultRepoName.split("/")[0]
     : undefined;
+
+  const getDefaultRulePath = (
+    editor: "cursor" | "copilot (vscode)" | "windsurf" | "other"
+  ): string => {
+    if (editor === "cursor") {
+      return ".cursor/rules/sonarflow-autofix.mdc";
+    }
+    if (editor === "copilot (vscode)") {
+      return ".vscode/sonarflow-autofix.md";
+    }
+    if (editor === "windsurf") {
+      return ".windsurf/rules/sonarflow-autofix.mdc";
+    }
+    return ".rules/sonarflow-autofix.md";
+  };
 
   let answers: InitAnswers;
   try {
@@ -244,6 +261,16 @@ const runInit = async (): Promise<void> => {
       default: "safe",
     });
 
+    const defaultRulePath = getDefaultRulePath(aiEditor);
+    const rulePath = await input({
+      message: "Rule path:",
+      default: defaultRulePath,
+      validate: (val: string) => {
+        const trimmed = (val ?? "").trim();
+        return trimmed ? true : "Rule path is required";
+      },
+    });
+
     answers = {
       repoName,
       gitProvider,
@@ -255,6 +282,7 @@ const runInit = async (): Promise<void> => {
       sonarMode,
       sonarBaseUrl,
       rulesFlavor,
+      rulePath: rulePath.trim(),
     };
   } catch (error) {
     // Handle graceful exit on SIGINT (Ctrl+C)
@@ -297,6 +325,7 @@ const runInit = async (): Promise<void> => {
     // automation
     aiEditor: answers.aiEditor,
     rulesFlavor: answers.rulesFlavor,
+    rulePath: answers.rulePath,
   };
 
   const configSpinner = ora({
@@ -352,17 +381,7 @@ const runInit = async (): Promise<void> => {
     }
     const ruleContent = await fs.readFile(templateRulePath, "utf8");
 
-    const editor = answers.aiEditor;
-    let targetRulePath: string;
-    if (editor === "cursor") {
-      targetRulePath = path.join(process.cwd(), ".cursor/rules/sonar-issue-fix.mdc");
-    } else if (editor === "copilot (vscode)") {
-      targetRulePath = path.join(process.cwd(), ".vscode/sonar-issue-fix.md");
-    } else if (editor === "windsurf") {
-      targetRulePath = path.join(process.cwd(), ".windsurf/rules/sonar-issue-fix.mdc");
-    } else {
-      targetRulePath = path.join(process.cwd(), ".rules/sonar-issue-fix.md");
-    }
+    const targetRulePath = path.join(process.cwd(), answers.rulePath);
 
     await fs.ensureDir(path.dirname(targetRulePath));
     await fs.writeFile(targetRulePath, ruleContent, "utf8");

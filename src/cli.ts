@@ -121,7 +121,7 @@ program
 
 program
   .command("fetch")
-  .description("Fetch Sonar issues and save to .sonar/issues.json")
+  .description("Fetch Sonar issues and save to .sonarflow/issues.json")
   .allowExcessArguments(true)
   .action(() => {
     runNodeScript("./versioning/index.js", process.argv.slice(3));

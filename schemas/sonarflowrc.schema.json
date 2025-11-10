@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/bitrockteam/sonarflow/v0.3.0-beta.3/schemas/sonarflowrc.schema.json",
+  "$id": "https://raw.githubusercontent.com/bitrockteam/sonarflow/v0.3.0-beta.5/schemas/sonarflowrc.schema.json",
   "title": "Sonarflow Configuration Schema",
   "description": "Schema for .sonarflowrc.json configuration file",
   "type": "object",
@@ -11,7 +11,8 @@
     "sonarProjectKey",
     "sonarMode",
     "aiEditor",
-    "rulesFlavor"
+    "rulesFlavor",
+    "rulePath"
   ],
   "properties": {
     "$schema": {
@@ -91,9 +92,14 @@
       ],
       "description": "Rules flavor for AI code generation"
     },
+    "rulePath": {
+      "type": "string",
+      "description": "Path to the rule file (relative to project root)",
+      "minLength": 1
+    },
     "outputPath": {
       "type": "string",
-      "description": "Output path for sonar issues (default: '.sonar/')"
+      "description": "Output path for sonar issues (default: '.sonarflow/')"
     }
   },
   "allOf": [
