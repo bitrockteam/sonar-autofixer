@@ -1,11 +1,11 @@
-# sonar-issue-fix (YOLO MODE)
+# sonarflow-autofix (YOLO MODE)
 
 Aggressive automation for fixing Sonar issues in this repo.
 
 Pre-flight:
 
 - Before any coding, auto-fetch issues by running `sonar:fetch`.
-- Parse `.sonar/issues.json` and create a TODO list covering ALL issues to solve.
+- Parse `.sonarflow/issues.json` and create a TODO list covering ALL issues to solve.
 - Order by priority: S3776,S3358,S4165 > S1874,S6551,S6660 > S6759,S4325,S6479,S6478 > S125,S1135.
 
 Execution loop:

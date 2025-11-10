@@ -140,7 +140,7 @@ npx @bitrockteam/sonarflow fetch my-branch https://sonarcloud.io/project/issues?
 ```
 
 - Auto PR detection tries provider API first (GitHub or Bitbucket), then falls back to extracting from branch naming patterns.
-- Issues are saved to `.sonar/issues.json`.
+- Issues are saved to `.sonarflow/issues.json`.
 
 #### Initialize Configuration
 
@@ -206,7 +206,7 @@ npx @bitrockteam/sonarflow@latest <command>
 1. Detects the current git branch or uses provided branch name
 2. Attempts to find associated PR using GitHub or Bitbucket API, or branch name pattern matching
 3. Fetches SonarQube issues for the PR or branch
-4. Saves issues to `.sonar/issues.json`
+4. Saves issues to `.sonarflow/issues.json`
 5. Displays a summary of fetched issues
 
 
@@ -219,21 +219,21 @@ npx @bitrockteam/sonarflow@latest <command>
 
 ## Output Files
 
-- `.sonar/issues.json` - Fetched SonarQube issues in JSON format
+- `.sonarflow/issues.json` - Fetched SonarQube issues in JSON format
 - `.sonarflowrc.json` - Project configuration
-- `.cursor/rules/sonar-issue-fix.mdc` - Cursor AI rules (if selected)
-- `.vscode/sonar-issue-fix.md` - VSCode rules (if selected)
-- `.windsurf/rules/sonar-issue-fix.mdc` - Windsurf rules (if selected)
-- `.rules/sonar-issue-fix.md` - Generic rules (if selected "other")
+- `.cursor/rules/sonarflow-autofix.mdc` - Cursor AI rules (if selected)
+- `.vscode/sonarflow-autofix.md` - VSCode rules (if selected)
+- `.windsurf/rules/sonarflow-autofix.mdc` - Windsurf rules (if selected)
+- `.rules/sonarflow-autofix.md` - Generic rules (if selected "other")
 
 ## AI Editor Integration
 
 The tool creates specific rules for your chosen AI editor to help with automated SonarQube issue fixing:
 
-- **Cursor**: Creates `.cursor/rules/sonar-issue-fix.mdc`
-- **VSCode with Copilot**: Creates `.vscode/sonar-issue-fix.md`
-- **Windsurf**: Creates `.windsurf/rules/sonar-issue-fix.mdc`
-- **Other**: Creates `.rules/sonar-issue-fix.md`
+- **Cursor**: Creates `.cursor/rules/sonarflow-autofix.mdc`
+- **VSCode with Copilot**: Creates `.vscode/sonarflow-autofix.md`
+- **Windsurf**: Creates `.windsurf/rules/sonarflow-autofix.mdc`
+- **Other**: Creates `.rules/sonarflow-autofix.md`
 
 These rules provide patterns and priorities for fixing common SonarQube issues.
 

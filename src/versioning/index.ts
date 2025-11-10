@@ -166,7 +166,7 @@ const fetchSonarIssues = async (
     ]);
 
     // Save issues to file
-    const outputPath = config.outputPath || ".sonar/";
+    const outputPath = config.outputPath || ".sonarflow/";
     const sonarDir = path.join(process.cwd(), outputPath);
     if (!fs.existsSync(sonarDir)) {
       fs.mkdirSync(sonarDir, { recursive: true });

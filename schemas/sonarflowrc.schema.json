@@ -11,7 +11,8 @@
     "sonarProjectKey",
     "sonarMode",
     "aiEditor",
-    "rulesFlavor"
+    "rulesFlavor",
+    "rulePath"
   ],
   "properties": {
     "$schema": {
@@ -26,18 +27,12 @@
     },
     "gitProvider": {
       "type": "string",
-      "enum": [
-        "github",
-        "bitbucket"
-      ],
+      "enum": ["github", "bitbucket"],
       "description": "Git provider platform"
     },
     "repositoryVisibility": {
       "type": "string",
-      "enum": [
-        "private",
-        "public"
-      ],
+      "enum": ["private", "public"],
       "description": "Repository visibility setting"
     },
     "gitOrganization": {
@@ -55,10 +50,7 @@
     },
     "sonarMode": {
       "type": "string",
-      "enum": [
-        "standard",
-        "custom"
-      ],
+      "enum": ["standard", "custom"],
       "description": "Sonar mode: 'standard' for SonarCloud, 'custom' for self-hosted SonarQube"
     },
     "sonarBaseUrl": {
@@ -74,26 +66,22 @@
     },
     "aiEditor": {
       "type": "string",
-      "enum": [
-        "cursor",
-        "copilot (vscode)",
-        "windsurf",
-        "other"
-      ],
+      "enum": ["cursor", "copilot (vscode)", "windsurf", "other"],
       "description": "AI editor being used"
     },
     "rulesFlavor": {
       "type": "string",
-      "enum": [
-        "safe",
-        "vibe-coder",
-        "yolo"
-      ],
+      "enum": ["safe", "vibe-coder", "yolo"],
       "description": "Rules flavor for AI code generation"
+    },
+    "rulePath": {
+      "type": "string",
+      "description": "Path to the rule file (relative to project root)",
+      "minLength": 1
     },
     "outputPath": {
       "type": "string",
-      "description": "Output path for sonar issues (default: '.sonar/')"
+      "description": "Output path for sonar issues (default: '.sonarflow/')"
     }
   },
   "allOf": [
@@ -104,14 +92,10 @@
             "const": "standard"
           }
         },
-        "required": [
-          "sonarMode"
-        ]
+        "required": ["sonarMode"]
       },
       "then": {
-        "required": [
-          "sonarOrganization"
-        ],
+        "required": ["sonarOrganization"],
         "properties": {
           "sonarOrganization": {
             "type": "string",
@@ -128,14 +112,10 @@
             "const": "custom"
           }
         },
-        "required": [
-          "sonarMode"
-        ]
+        "required": ["sonarMode"]
       },
       "then": {
-        "required": [
-          "sonarBaseUrl"
-        ],
+        "required": ["sonarBaseUrl"],
         "properties": {
           "sonarBaseUrl": {
             "type": "string",
