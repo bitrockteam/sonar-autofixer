@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Chores
 
+* **release:** 1.0.0-beta.0 ([4f69dda](https://github.com/bitrockteam/sonarflow/commit/4f69dda1e34ec118424bb27cf0e5e2cf09f620bd))
+* update schema version to v1.0.0-beta.0 ([227691d](https://github.com/bitrockteam/sonarflow/commit/227691dc3a18ec078f7c006067c478e05e6665ac))
+
+## [1.0.0-beta.0](https://github.com/bitrockteam/sonarflow/compare/v0.3.0-beta.5...v1.0.0-beta.0) (2025-11-10)
+
+
+### Chores
+
 * update schema version to v1.0.0-beta.0 ([227691d](https://github.com/bitrockteam/sonarflow/commit/227691dc3a18ec078f7c006067c478e05e6665ac))
 
 ## [0.3.0-beta.5](https://github.com/bitrockteam/sonarflow/compare/v0.3.0-beta.4...v0.3.0-beta.5) (2025-11-10)
