@@ -294,6 +294,19 @@ export class SonarIssueExtractor {
   }
 
   /**
+   * Gets the component key using the same logic as SonarUrlBuilder
+   * This ensures consistency across all API calls
+   * @param config - Configuration object
+   * @returns Component key
+   */
+  private getComponentKey(config: Config): string {
+    const component = config.sonarProjectKey || config.repoName;
+    return (config.gitOrganization as string | undefined)
+      ? `${config.gitOrganization}/${component}`
+      : component;
+  }
+
+  /**
    * Extracts PR key from a SonarQube PR link
    * @param prLink - SonarQube PR link
    * @returns PR key
@@ -420,9 +433,8 @@ export class SonarIssueExtractor {
     const baseUrl = SonarUrlBuilder.normalizeUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
     const measuresUrl = this.buildMeasuresUrl(baseUrl);
 
-    // For measures API, use project key directly (not with organization prefix)
-    // This matches how SonarQube expects component keys for measures
-    const componentKey = config.sonarProjectKey || config.repoName;
+    // Use the same component key logic as the issues API for consistency
+    const componentKey = this.getComponentKey(config);
 
     const params = new URLSearchParams({
       component: componentKey,
@@ -480,9 +492,8 @@ export class SonarIssueExtractor {
     const baseUrl = SonarUrlBuilder.normalizeUrl(config.sonarBaseUrl || this.sonarBaseUrlRaw);
     const hotspotsUrl = this.buildHotspotsUrl(baseUrl);
 
-    // For hotspots API, use project key directly (not with organization prefix)
-    // This matches how SonarQube expects project keys for hotspots
-    const projectKey = config.sonarProjectKey || config.repoName;
+    // Use the same component key logic as the issues API for consistency
+    const projectKey = this.getComponentKey(config);
 
     const params = new URLSearchParams({
       projectKey: projectKey,

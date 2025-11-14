@@ -8,6 +8,7 @@ interface UrlBuilderConfig {
   sonarProjectKey?: string;
   gitOrganization?: string;
   repoName: string;
+  timeZone?: string;
 }
 
 /**
@@ -58,6 +59,7 @@ export class SonarUrlBuilder {
       componentKeys: config.sonarComponentKeys,
       organization: config.sonarOrganization,
       component: config.gitOrganization ? `${config.gitOrganization}/${component}` : component,
+      timeZone: config.timeZone,
     };
   }
 
@@ -83,7 +85,6 @@ export class SonarUrlBuilder {
       }
     } else {
       // SonarQube private instance
-      params.set("inNewCodePeriod", "true");
       params.set("issueStatuses", "CONFIRMED,OPEN");
       params.set(
         "facets",
