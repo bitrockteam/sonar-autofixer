@@ -58,7 +58,7 @@ export class SonarUrlBuilder {
       isSonarCloud,
       componentKeys: config.sonarComponentKeys,
       organization: config.sonarOrganization,
-      component: config.gitOrganization ? `${config.gitOrganization}/${component}` : component,
+      component: component,
       timeZone: config.timeZone,
     };
   }

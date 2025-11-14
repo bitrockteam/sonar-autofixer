@@ -221,31 +221,52 @@ export class SonarIssueExtractor {
       console.log(chalk.blue(`🔍 Checking for PR associated with branch: ${branch}`));
 
       // Try to get PR number from Bitbucket API using the branch name
-      const bitbucketApiUrl = buildBitbucketPrApiUrl(
-        this.bitbucketBaseUrl,
-        organization,
-        repoName,
-        branch
-      );
-      const response = await fetch(bitbucketApiUrl, {
+      // First check for open PRs
+      const openPrUrl = `${this.bitbucketBaseUrl}/${organization}/${repoName}/pullrequests?q=source.branch.name="${branch}" AND state="OPEN"`;
+      const openResponse = await fetch(openPrUrl, {
         headers: this.getBitbucketAuthHeaders(),
       });
 
-      if (response.ok) {
-        const data = (await response.json()) as {
-          values?: Array<{ id: number }>;
+      if (openResponse.ok) {
+        const openData = (await openResponse.json()) as {
+          values?: Array<{ id: number; state: string }>;
         };
-        if (data.values && data.values.length > 0) {
-          const prNumber = data.values[0].id;
+        if (openData.values && openData.values.length > 0) {
+          const prNumber = openData.values[0].id;
           console.log(chalk.green(`✅ Found PR #${prNumber} for branch: ${branch}`));
           return prNumber.toString();
         }
       }
 
-      // Fallback: try to extract PR number from branch name
-      const extractedPr = extractPrNumberFromBranch(branch);
-      if (extractedPr) {
-        return extractedPr;
+      // If no open PR found, check for all PRs (including merged/declined)
+      const allPrUrl = buildBitbucketPrApiUrl(
+        this.bitbucketBaseUrl,
+        organization,
+        repoName,
+        branch
+      );
+
+      console.log(chalk.blue(`All PR URL: ${allPrUrl}`));
+      console.log(
+        chalk.blue(`All PR headers: ${JSON.stringify(this.getBitbucketAuthHeaders(), null, 2)}`)
+      );
+      const allResponse = await fetch(allPrUrl, {
+        headers: this.getBitbucketAuthHeaders(),
+      });
+
+      if (allResponse.ok) {
+        const allData = (await allResponse.json()) as {
+          values?: Array<{ id: number; state: string }>;
+        };
+        if (allData.values && allData.values.length > 0) {
+          const prNumber = allData.values[0].id;
+          console.log(
+            chalk.green(
+              `✅ Found PR #${prNumber} for branch: ${branch} (${allData.values[0].state})`
+            )
+          );
+          return prNumber.toString();
+        }
       }
 
       console.warn(chalk.yellow(`⚠️  No PR found for branch: ${branch}`));
@@ -301,9 +322,7 @@ export class SonarIssueExtractor {
    */
   private getComponentKey(config: Config): string {
     const component = config.sonarProjectKey || config.repoName;
-    return (config.gitOrganization as string | undefined)
-      ? `${config.gitOrganization}/${component}`
-      : component;
+    return component;
   }
 
   /**
@@ -336,6 +355,8 @@ export class SonarIssueExtractor {
   ): Promise<SonarResponse> {
     const urlBuilder = this.createUrlBuilder(config);
     const url = urlBuilder.buildUrl(options);
+
+    console.log(chalk.blue(`URL: ${url}`));
 
     if (logMessage) {
       console.log(chalk.blue(logMessage));
