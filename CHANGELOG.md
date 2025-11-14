@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.1](https://github.com/bitrockteam/sonarflow/compare/v1.0.0-beta.0...v1.0.0-beta.1) (2025-11-14)
+
+
+### Code Refactoring
+
+* unify component key logic across API calls in SonarIssueExtractor ([da6fa9c](https://github.com/bitrockteam/sonarflow/commit/da6fa9c280299f0bbeafd92529dc1dd152262dde))
+
+
+### Chores
+
+* **release:** 1.0.0-beta.0 ([9e6aa47](https://github.com/bitrockteam/sonarflow/commit/9e6aa4791b645bfafd29111bd63caebcfe7a7f3b))
+* update schema version to v1.0.0-beta.1 ([77f049c](https://github.com/bitrockteam/sonarflow/commit/77f049c1dfd608f72840b81c0dcf5ed7634ac3a0))
+
 ## [1.0.0-beta.0](https://github.com/bitrockteam/sonarflow/compare/v0.3.0-beta.5...v1.0.0-beta.0) (2025-11-10)
 
 
