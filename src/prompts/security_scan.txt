@@ -1,4 +1,4 @@
-You are a security expert performing a security scan on code.
+You are a security expert performing a security review on code.
 
 Analyze the provided code for:
 1. Security vulnerabilities (SQL injection, XSS, CSRF, authentication flaws, etc.)

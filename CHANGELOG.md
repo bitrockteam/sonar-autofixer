@@ -148,7 +148,7 @@ All notable changes to this project will be documented in this file. See [standa
 * add husky for Git hooks in package.json and bun.lock ([3b24ccc](https://github.com/bitrockteam/sonarflow/commit/3b24ccca07ed5e69a81afd2f427b86eb0b3c7cac))
 * bump version to 0.2.2 in package.json ([5c4efa2](https://github.com/bitrockteam/sonarflow/commit/5c4efa2eeebf359f4956ecd0d53bfa05bf038c6c))
 * bump version to 0.2.3 and update release scripts ([5e2dbdf](https://github.com/bitrockteam/sonarflow/commit/5e2dbdf9e8cddd70c68c39e48e7186127be3c105))
-* remove local scan command and related configurations from package.json and CLI ([1f818ec](https://github.com/bitrockteam/sonarflow/commit/1f818ec20b1c5df2338444f8ce861c43c95ca2c3))
+* remove local command and related configurations from package.json and CLI ([1f818ec](https://github.com/bitrockteam/sonarflow/commit/1f818ec20b1c5df2338444f8ce861c43c95ca2c3))
 * remove obsolete Sonar configuration file .sonarflowrc.json ([aaaf3c9](https://github.com/bitrockteam/sonarflow/commit/aaaf3c958fd9ba8373d8fca639dc4d202556a9cc))
 * update .gitignore and format package.json for consistency ([5215225](https://github.com/bitrockteam/sonarflow/commit/5215225bc65aaed50825c121b1cf43956fedd2ba))
 * update biome configuration and dependencies for version 2.3.2 ([e546e33](https://github.com/bitrockteam/sonarflow/commit/e546e3352f98195054fa02521bba7aa7bd0c9adb))

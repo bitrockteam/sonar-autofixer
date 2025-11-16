@@ -8,7 +8,7 @@
   <a href="https://sonarflow.vercel.app/">🌐 Website</a>
 </p>
 
-CLI utility for fetching SonarQube issues and running local SonarQube scans. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis. Includes AI editor integration for automated issue fixing. Supports GitHub and Bitbucket.
+CLI utility for fetching SonarQube issues. Automatically detects PR IDs from branches and fetches SonarQube issues for code quality analysis. Includes AI editor integration for automated issue fixing. Supports GitHub and Bitbucket.
 
 ## Installation
 
@@ -85,17 +85,17 @@ SONAR_TOKEN=your-sonar-token            # Required for private Sonar; not needed
 SONAR_ORGANIZATION=your-organization    # For SonarCloud
 SONAR_COMPONENT_KEYS=your-project-key   # For SonarCloud fetch
 SONAR_BASE_URL=https://sonarcloud.io/api/issues/search  # Optional override
-SONAR_PROJECT_KEY=your-project-key      # Used by local scanner command
+SONAR_PROJECT_KEY=your-project-key      # SonarQube project identifier
 ```
 
 Notes:
 
-- If `.sonarflowrc.json` has `"publicSonar": true`, the scanner won’t require `SONAR_TOKEN`.
+- If `.sonarflowrc.json` has `"publicSonar": true`, the tool won't require `SONAR_TOKEN`.
 - For Bitbucket PR detection, both `GIT_EMAIL` and `GIT_TOKEN` are required.
 
 ## Access Tokens (How to Create + Required Scopes)
 
-To use this CLI you’ll need tokens for your Git provider and, when scanning private projects, for Sonar.
+To use this CLI you'll need tokens for your Git provider and, when fetching from private projects, for Sonar.
 
 - **GitHub Personal Access Token**
   - **What you need**: Classic token with minimal scopes
@@ -302,7 +302,7 @@ The MCP server provides the following tools:
 - **`code_review`**: Expert code review prompt focused on code quality, bugs, and best practices
   - Parameters: `code`
 
-- **`security_scan`**: Security expert prompt for scanning code for vulnerabilities and security issues
+- **`security_scan`**: Security expert prompt for reviewing code for vulnerabilities and security issues
   - Parameters: `code`
 
 ### Usage
@@ -312,7 +312,7 @@ Once configured, your AI assistant can use these tools and prompts directly. For
 - "Check the quality gate status for project XYZ"
 - "Get repository info for workspace/repo"
 - "Review this code for quality issues"
-- "Scan this code for security vulnerabilities"
+- "Review this code for security vulnerabilities"
 
 ## Requirements
 
