@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.0.0-beta.3](https://github.com/bitrockteam/sonarflow/compare/v1.0.0-beta.2...v1.0.0-beta.3) (2025-11-16)
+
+
+### Chores
+
+* update dependencies and add CLAUDE documentation for Bun usage ([ce3ed63](https://github.com/bitrockteam/sonarflow/commit/ce3ed63ae41f3fcb16dc3bc24909b01fc889edcb))
+* update Node version in .nvmrc and upgrade dependencies in bun.lock ([61ecf99](https://github.com/bitrockteam/sonarflow/commit/61ecf99169fd23d5c352b3e9c40a85dfe9f113e1))
+* update README and CHANGELOG for command and configuration changes ([afff633](https://github.com/bitrockteam/sonarflow/commit/afff633237b40137f9075497af4c996a8454028e))
+* update schema version to v1.0.0-beta.3 ([e1ef032](https://github.com/bitrockteam/sonarflow/commit/e1ef032f01f281285fee89c8c131b31bce0ba318))
+
 ## [1.0.0-beta.2](https://github.com/bitrockteam/sonarflow/compare/v1.0.0-beta.1...v1.0.0-beta.2) (2025-11-14)
 
 
