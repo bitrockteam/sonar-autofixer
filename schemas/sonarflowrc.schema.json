@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/bitrockteam/sonarflow/v1.0.0-beta.2/schemas/sonarflowrc.schema.json",
+  "$id": "https://raw.githubusercontent.com/bitrockteam/sonarflow/v1.0.0-beta.3/schemas/sonarflowrc.schema.json",
   "title": "Sonarflow Configuration Schema",
   "description": "Schema for .sonarflowrc.json configuration file",
   "type": "object",
